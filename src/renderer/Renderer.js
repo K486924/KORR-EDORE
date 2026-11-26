@@ -2,6 +2,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 import { GRID, SOLID_CELLS, cellCenter } from "../level/layout.js";
 import { VIEWMODEL_CONFIG } from "../config/viewmodel.js";
 import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
+import { PLAYER_CONFIG } from "../config/physics.js";
 
 function makeNoiseTexture(base, speckle, size = 256) {
   const canvas = document.createElement("canvas");
@@ -175,6 +176,11 @@ export class Renderer {
     this.viewModel.rotation.set(cfg.rotation.x, cfg.rotation.y, cfg.rotation.z);
     this.viewModel.scale.setScalar(cfg.handScale);
     this.viewModel.frustumCulled = false;
+    this.viewModelBasePosition = this.viewModel.position.clone();
+    this.viewModelBaseRotation = this.viewModel.rotation.clone();
+    this.bobPhase = 0;
+    this.swayAmplitude = 0;
+    this.lookLag = { x: 0, y: 0 };
 
     const sleeve = new THREE.MeshStandardMaterial({
       color: 0x252c29, roughness: 0.96, metalness: 0.02,
@@ -214,6 +220,41 @@ export class Renderer {
 
     this.camera.add(this.viewModel);
   }
+
+
+  updateViewModel(deltaSeconds, movementSpeed, lookDeltaYaw = 0, lookDeltaPitch = 0) {
+    if (!this.viewModel) return;
+    const dt = Math.max(0, Math.min(deltaSeconds, 0.05));
+    const cfg = VIEWMODEL_CONFIG;
+    const speed = Math.max(0, movementSpeed);
+
+    this.bobPhase += speed * dt * cfg.swayFrequency;
+    const targetAmplitude = speed > 0.025
+      ? cfg.swayAmount * Math.min(speed / PLAYER_CONFIG.moveSpeed, 1)
+      : 0;
+    const swayAlpha = 1 - Math.exp(-dt * cfg.swayBlendSpeed);
+    this.swayAmplitude += (targetAmplitude - this.swayAmplitude) * swayAlpha;
+
+    const clamp = (value, limit) => Math.max(-limit, Math.min(limit, value));
+    const targetLagX = clamp(-lookDeltaYaw * cfg.lookLagYawScale, cfg.lookLagLimit);
+    const targetLagY = clamp(-lookDeltaPitch * cfg.lookLagPitchScale, cfg.lookLagLimit);
+    const lagAlpha = 1 - Math.exp(-dt * cfg.lookLagReturnSpeed);
+    this.lookLag.x += (targetLagX - this.lookLag.x) * lagAlpha;
+    this.lookLag.y += (targetLagY - this.lookLag.y) * lagAlpha;
+
+    const amp = this.swayAmplitude;
+    this.viewModel.position.set(
+      this.viewModelBasePosition.x + Math.sin(this.bobPhase) * amp + this.lookLag.x,
+      this.viewModelBasePosition.y + Math.sin(this.bobPhase * 2) * amp + this.lookLag.y,
+      this.viewModelBasePosition.z
+    );
+    this.viewModel.rotation.set(
+      this.viewModelBaseRotation.x + this.lookLag.y * 0.55,
+      this.viewModelBaseRotation.y + this.lookLag.x * 0.4,
+      this.viewModelBaseRotation.z
+    );
+  }
+
 
   buildFlashlight() {
     const cfg = VIEWMODEL_CONFIG;
