@@ -11,6 +11,7 @@ export class Game {
     this.move = { x: 0, z: 0 };
     this.yaw = 0;
     this.pitch = 0;
+    this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
     this.setupInput(canvas);
   }
@@ -43,8 +44,12 @@ export class Game {
       const dy = event.clientY - previous.y;
       previous = { x: event.clientX, y: event.clientY };
       const sensitivity = event.pointerType === "mouse" ? 0.0022 : 0.004;
-      this.yaw -= dx * sensitivity;
+      const previousPitch = this.pitch;
+      const yawChange = -dx * sensitivity;
+      this.yaw += yawChange;
       this.pitch = Math.max(-1.25, Math.min(1.25, this.pitch - dy * sensitivity));
+      this.lookDelta.yaw += yawChange;
+      this.lookDelta.pitch += this.pitch - previousPitch;
       camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
     });
     const endLook = event => {
@@ -101,9 +106,20 @@ export class Game {
     const length = Math.hypot(forward, strafe) || 1;
     const speed = PLAYER_CONFIG.moveSpeed * delta / length;
     const camera = this.renderer.camera;
+    const startX = camera.position.x;
+    const startZ = camera.position.z;
     const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
     const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
     moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius);
+
+    const actualX = camera.position.x - startX;
+    const actualZ = camera.position.z - startZ;
+    const actualSpeed = delta > 0 ? Math.hypot(actualX, actualZ) / delta : 0;
+    this.renderer.updateViewModel(
+      delta, actualSpeed, this.lookDelta.yaw, this.lookDelta.pitch
+    );
+    this.lookDelta.yaw = 0;
+    this.lookDelta.pitch = 0;
   }
 
   syncFlashlightButton(enabled) {
