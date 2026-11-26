@@ -1,4 +1,6 @@
 import { Renderer } from "../renderer/Renderer.js";
+import { moveWithCollisions } from "../player/collision.js";
+import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
 export class Game {
   constructor(canvas) {
@@ -74,7 +76,7 @@ export class Game {
 
   frame(now) {
     if (!this.running) return;
-    const deltaSeconds = Math.min((now - this.lastTime) / 1000, 0.05);
+    const deltaSeconds = Math.min((now - this.lastTime) / 1000, PHYSICS_CONFIG.maxDeltaSeconds);
     this.lastTime = now;
     this.update(deltaSeconds);
     this.renderer.render();
@@ -87,12 +89,11 @@ export class Game {
     const strafe = (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) +
       (this.keys.has("a") || this.keys.has("arrowleft") ? -1 : 0) + this.move.x;
     const length = Math.hypot(forward, strafe) || 1;
-    const speed = 2.15 * delta / length;
+    const speed = PLAYER_CONFIG.moveSpeed * delta / length;
     const camera = this.renderer.camera;
-    camera.position.x += (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
-    camera.position.z += (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
-    camera.position.x = Math.max(-2.15, Math.min(2.15, camera.position.x));
-    camera.position.z = Math.max(-27, Math.min(7.5, camera.position.z));
+    const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
+    const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
+    moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius);
   }
 
   stop() {
