@@ -30,23 +30,27 @@ function resolveAxis(position, radius, axis) {
       if (distanceSquared >= radius * radius) continue;
 
       if (axis === "x") {
+        const requiredX = Math.sqrt(Math.max(0, radius * radius - dz * dz));
         if (Math.abs(dx) > 1e-8) {
-          position.x = closestX + Math.sign(dx) * radius;
+          position.x = closestX + Math.sign(dx) * requiredX;
         } else {
           const left = Math.abs(position.x - (boxX - HALF_CELL));
           const right = Math.abs((boxX + HALF_CELL) - position.x);
           position.x = left < right
-            ? boxX - HALF_CELL - radius
-            : boxX + HALF_CELL + radius;
+            ? boxX - HALF_CELL - requiredX
+            : boxX + HALF_CELL + requiredX;
         }
-      } else if (Math.abs(dz) > 1e-8) {
-        position.z = closestZ + Math.sign(dz) * radius;
       } else {
-        const near = Math.abs(position.z - (boxZ - HALF_CELL));
-        const far = Math.abs((boxZ + HALF_CELL) - position.z);
-        position.z = near < far
-          ? boxZ - HALF_CELL - radius
-          : boxZ + HALF_CELL + radius;
+        const requiredZ = Math.sqrt(Math.max(0, radius * radius - dx * dx));
+        if (Math.abs(dz) > 1e-8) {
+          position.z = closestZ + Math.sign(dz) * requiredZ;
+        } else {
+          const near = Math.abs(position.z - (boxZ - HALF_CELL));
+          const far = Math.abs((boxZ + HALF_CELL) - position.z);
+          position.z = near < far
+            ? boxZ - HALF_CELL - requiredZ
+            : boxZ + HALF_CELL + requiredZ;
+        }
       }
     }
   }
