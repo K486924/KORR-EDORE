@@ -1,4 +1,5 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import { GRID, SOLID_CELLS, cellCenter } from "../level/layout.js";
 
 function makeNoiseTexture(base, speckle, size = 256) {
   const canvas = document.createElement("canvas");
@@ -26,7 +27,7 @@ export class Renderer {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x090d0e);
     this.scene.fog = new THREE.FogExp2(0x111819, 0.038);
-    this.camera = new THREE.PerspectiveCamera(74, 1, 0.08, 90);
+    this.camera = new THREE.PerspectiveCamera(74, 1, 0.05, 90);
     this.camera.position.set(0, 1.62, 7.5);
     this.camera.rotation.order = "YXZ";
 
@@ -72,9 +73,19 @@ export class Renderer {
     // Narrow residential passage: deliberately imperfect, not a clean game corridor.
     this.box(this.scene, [5.8, 0.22, 39], [0, -0.12, -10], floorMat);
     this.box(this.scene, [5.8, 0.18, 39], [0, 3.45, -10], ceilingMat, false);
-    this.box(this.scene, [0.22, 3.5, 39], [-2.9, 1.62, -10], plaster);
-    this.box(this.scene, [0.22, 3.5, 39], [2.9, 1.62, -10], plaster);
-    this.box(this.scene, [5.8, 3.5, 0.25], [0, 1.62, -29.5], plaster);
+    // Build visible wall geometry from the exact same solid cells used by collision.
+    const wallGeometry = new THREE.BoxGeometry(GRID.cellSize, 3.5, GRID.cellSize);
+    const wallInstances = new THREE.InstancedMesh(wallGeometry, plaster, SOLID_CELLS.length);
+    const wallMatrix = new THREE.Matrix4();
+    SOLID_CELLS.forEach((cell, index) => {
+      const center = cellCenter(cell.x, cell.z);
+      wallMatrix.makeTranslation(center.x, 1.62, center.z);
+      wallInstances.setMatrixAt(index, wallMatrix);
+    });
+    wallInstances.instanceMatrix.needsUpdate = true;
+    wallInstances.castShadow = true;
+    wallInstances.receiveShadow = true;
+    this.scene.add(wallInstances);
 
     // Skirting and ceiling seams.
     for (const x of [-2.77, 2.77]) {
