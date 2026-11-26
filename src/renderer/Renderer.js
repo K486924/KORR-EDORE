@@ -46,6 +46,9 @@ export class Renderer {
 
     this.elapsed = 0;
     this.flickerValue = 0;
+    this.noisePhase = 0;
+    this.noiseCurrent = 0;
+    this.noiseNext = Math.random() * 2 - 1;
     this.dipTimer = 0;
     this.flashlightEnabled = true;
     this.beamDirection = new THREE.Vector3(0, 0, -1);
@@ -243,7 +246,7 @@ export class Renderer {
     add(new THREE.BoxGeometry(0.035, 0.018, 0.045), rubber, [0.075, 0.09, -0.24], [0, 0, 0]);
 
     this.flashlight = new THREE.SpotLight(
-      0xe0eadf, cfg ? LIGHT_CONFIG.intensity : LIGHT_CONFIG.intensity,
+      0xe0eadf, LIGHT_CONFIG.intensity,
       LIGHT_CONFIG.distance, LIGHT_CONFIG.angle, LIGHT_CONFIG.penumbra, LIGHT_CONFIG.decay
     );
     this.flashlight.position.set(0.425, -0.385, -1.205);
@@ -304,11 +307,17 @@ export class Renderer {
     this.elapsed += dt;
     if (!this.flashlight) return;
 
-    const wave = Math.sin(this.elapsed * 1.37 + 0.7) * 0.55 +
-      Math.sin(this.elapsed * 2.91 + 1.9) * 0.28 +
-      Math.sin(this.elapsed * 0.63 + 2.4) * 0.17;
+    this.noisePhase += dt;
+    while (this.noisePhase >= 0.18) {
+      this.noisePhase -= 0.18;
+      this.noiseCurrent = this.noiseNext;
+      this.noiseNext = Math.random() * 2 - 1;
+    }
+    const noiseT = this.noisePhase / 0.18;
+    const smoothT = noiseT * noiseT * (3 - 2 * noiseT);
+    const noise = this.noiseCurrent + (this.noiseNext - this.noiseCurrent) * smoothT;
     const smoothAlpha = 1 - Math.exp(-dt * LIGHT_CONFIG.flickerSmoothing);
-    this.flickerValue += (wave - this.flickerValue) * smoothAlpha;
+    this.flickerValue += (noise - this.flickerValue) * smoothAlpha;
 
     if (this.dipTimer > 0) {
       this.dipTimer = Math.max(0, this.dipTimer - dt);
