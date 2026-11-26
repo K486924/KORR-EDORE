@@ -1,6 +1,7 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 import { GRID, SOLID_CELLS, cellCenter } from "../level/layout.js";
 import { VIEWMODEL_CONFIG } from "../config/viewmodel.js";
+import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 
 function makeNoiseTexture(base, speckle, size = 256) {
   const canvas = document.createElement("canvas");
@@ -37,17 +38,23 @@ export class Renderer {
       alpha: false
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = FEATURE_CONFIG.shadows;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 0.82;
 
-    this.clock = new THREE.Clock();
-    this.flickerLights = [];
+    this.elapsed = 0;
+    this.flickerValue = 0;
+    this.dipTimer = 0;
+    this.flashlightEnabled = true;
+    this.beamDirection = new THREE.Vector3(0, 0, -1);
+    this._lightWorldPosition = new THREE.Vector3();
+    this._beamTargetWorld = new THREE.Vector3();
     this.levelRoot = null;
     this.buildWorld();
     this.buildViewModel();
+    this.buildFlashlight();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
@@ -140,18 +147,13 @@ export class Renderer {
     }
 
     // Ceiling fixtures with restrained, cold light and occasional flicker.
-    world.add(new THREE.HemisphereLight(0x9caeaa, 0x171a17, 0.42));
-    const ambient = new THREE.AmbientLight(0x71817c, 0.14);
-    world.add(ambient);
+    world.add(new THREE.HemisphereLight(0x9caeaa, 0x171a17, 0.055));
+    world.add(new THREE.AmbientLight(0x71817c, 0.025));
     for (let i = 0; i < 5; i++) {
       const z = 5 - i * 7;
       this.box(world, [0.78, 0.045, 0.22], [0, 3.32, z], new THREE.MeshStandardMaterial({
-        color: 0x899b91, emissive: 0x61786d, emissiveIntensity: 0.65
+        color: 0x899b91, emissive: 0x61786d, emissiveIntensity: 0.22
       }), false);
-      const light = new THREE.PointLight(0xa7b9ae, i === 2 ? 1.25 : 0.8, 9, 2);
-      light.position.set(i % 2 ? 0.3 : -0.25, 3.08, z);
-      world.add(light);
-      this.flickerLights.push({ light, base: light.intensity, phase: Math.random() * 10, rate: 1.2 + Math.random() * 2 });
     }
 
     // One crooked ceiling panel and a small floor obstruction give the space scale.
@@ -210,6 +212,63 @@ export class Renderer {
     this.camera.add(this.viewModel);
   }
 
+  buildFlashlight() {
+    const cfg = VIEWMODEL_CONFIG;
+    const darkMetal = new THREE.MeshStandardMaterial({
+      color: 0x202725, metalness: 0.72, roughness: 0.38,
+      depthTest: false, depthWrite: false
+    });
+    const rubber = new THREE.MeshStandardMaterial({
+      color: 0x101614, roughness: 0.92,
+      depthTest: false, depthWrite: false
+    });
+    const lens = new THREE.MeshStandardMaterial({
+      color: 0x8b9d91, emissive: 0x526b5c, emissiveIntensity: 0.35,
+      metalness: 0.18, roughness: 0.24,
+      depthTest: false, depthWrite: false
+    });
+    const add = (geometry, material, position, rotation = [-Math.PI / 2, 0, 0]) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(...position);
+      mesh.rotation.set(...rotation);
+      mesh.renderOrder = cfg.renderOrder + 1;
+      mesh.frustumCulled = false;
+      this.viewModel.add(mesh);
+      return mesh;
+    };
+    add(new THREE.CylinderGeometry(0.043, 0.043, 0.34, 12), darkMetal, [0.035, 0.045, -0.25]);
+    add(new THREE.CylinderGeometry(0.061, 0.047, 0.075, 12), darkMetal, [0.035, 0.045, -0.445]);
+    add(new THREE.CylinderGeometry(0.047, 0.047, 0.012, 12), rubber, [0.035, 0.045, -0.49]);
+    add(new THREE.CylinderGeometry(0.039, 0.039, 0.008, 12), lens, [0.035, 0.045, -0.501]);
+    add(new THREE.BoxGeometry(0.035, 0.018, 0.045), rubber, [0.075, 0.09, -0.24], [0, 0, 0]);
+
+    this.flashlight = new THREE.SpotLight(
+      0xe0eadf, cfg ? LIGHT_CONFIG.intensity : LIGHT_CONFIG.intensity,
+      LIGHT_CONFIG.distance, LIGHT_CONFIG.angle, LIGHT_CONFIG.penumbra, LIGHT_CONFIG.decay
+    );
+    this.flashlight.position.set(0.425, -0.385, -1.205);
+    this.flashlight.castShadow = false;
+    this.flashlight.shadow.autoUpdate = false;
+    this.flashlightTarget = new THREE.Object3D();
+    this.flashlightTarget.position.set(0.425, -0.43, -9.5);
+    this.flashlight.target = this.flashlightTarget;
+    this.camera.add(this.flashlight);
+    this.camera.add(this.flashlightTarget);
+    this.beamDirection.copy(this.camera.getWorldDirection(new THREE.Vector3()));
+    this.flashlight.visible = this.flashlightEnabled;
+  }
+
+  setFlashlightEnabled(enabled) {
+    this.flashlightEnabled = Boolean(enabled);
+    this.flashlight.visible = this.flashlightEnabled;
+    return this.flashlightEnabled;
+  }
+
+  toggleFlashlight() {
+    return this.setFlashlightEnabled(!this.flashlightEnabled);
+  }
+
+
   disposeWorld() {
     if (!this.levelRoot) return;
     const geometries = new Set();
@@ -231,7 +290,7 @@ export class Renderer {
     textures.forEach(texture => texture.dispose());
     this.scene.remove(this.levelRoot);
     this.levelRoot = null;
-    this.flickerLights.length = 0;
+
   }
 
   rebuildWorld() {
@@ -240,12 +299,37 @@ export class Renderer {
   }
 
 
-  update(time) {
-    for (const item of this.flickerLights) {
-      const wave = Math.sin(time * item.rate + item.phase);
-      const glitch = Math.sin(time * 17 + item.phase) > 0.985 ? 0.12 : 1;
-      item.light.intensity = item.base * (0.92 + wave * 0.045) * glitch;
+  update(deltaSeconds = 0) {
+    const dt = Math.max(0, Math.min(deltaSeconds, 0.05));
+    this.elapsed += dt;
+    if (!this.flashlight) return;
+
+    const wave = Math.sin(this.elapsed * 1.37 + 0.7) * 0.55 +
+      Math.sin(this.elapsed * 2.91 + 1.9) * 0.28 +
+      Math.sin(this.elapsed * 0.63 + 2.4) * 0.17;
+    const smoothAlpha = 1 - Math.exp(-dt * LIGHT_CONFIG.flickerSmoothing);
+    this.flickerValue += (wave - this.flickerValue) * smoothAlpha;
+
+    if (this.dipTimer > 0) {
+      this.dipTimer = Math.max(0, this.dipTimer - dt);
+    } else if (Math.random() < LIGHT_CONFIG.flickerRate * dt) {
+      this.dipTimer = LIGHT_CONFIG.dipMinSeconds +
+        Math.random() * (LIGHT_CONFIG.dipMaxSeconds - LIGHT_CONFIG.dipMinSeconds);
     }
+    const dip = this.dipTimer > 0 ? LIGHT_CONFIG.dipIntensity : 1;
+    this.flashlight.intensity = this.flashlightEnabled
+      ? LIGHT_CONFIG.intensity * (1 + this.flickerValue * LIGHT_CONFIG.flickerStrength) * dip
+      : 0;
+
+    this.camera.updateMatrixWorld(true);
+    const desiredDirection = this.camera.getWorldDirection(new THREE.Vector3());
+    const beamAlpha = 1 - Math.exp(-dt * LIGHT_CONFIG.beamFollow);
+    this.beamDirection.lerp(desiredDirection, beamAlpha).normalize();
+    this.flashlight.getWorldPosition(this._lightWorldPosition);
+    this._beamTargetWorld.copy(this._lightWorldPosition)
+      .addScaledVector(this.beamDirection, 9);
+    this.camera.worldToLocal(this._beamTargetWorld);
+    this.flashlightTarget.position.copy(this._beamTargetWorld);
   }
 
   resize() {
@@ -256,14 +340,16 @@ export class Renderer {
     this.renderer.setSize(width, height, false);
   }
 
-  render() {
-    this.update(this.clock.getElapsedTime());
+  render(deltaSeconds = 0) {
+    this.update(deltaSeconds);
     this.renderer.render(this.scene, this.camera);
   }
 
   dispose() {
     this.resizeObserver?.disconnect();
     this.disposeWorld();
+    this.camera.remove(this.flashlight);
+    this.camera.remove(this.flashlightTarget);
     if (this.viewModel) {
       this.camera.remove(this.viewModel);
       this.viewModel.traverse(object => {
