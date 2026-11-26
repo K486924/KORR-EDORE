@@ -20,6 +20,7 @@ export class Game {
     this.yaw = camera.rotation.y;
     const onKey = (event, down) => {
       const key = event.key.toLowerCase();
+      if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
         event.preventDefault();
         down ? this.keys.add(key) : this.keys.delete(key);
@@ -52,6 +53,15 @@ export class Game {
     canvas.addEventListener("pointerup", endLook);
     canvas.addEventListener("pointercancel", endLook);
 
+    const flashlightButton = document.querySelector("#flashlight-toggle");
+    if (flashlightButton) {
+      flashlightButton.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.syncFlashlightButton(this.renderer.toggleFlashlight());
+      });
+    }
+
     document.querySelectorAll("[data-move]").forEach(button => {
       const direction = button.dataset.move;
       const set = value => {
@@ -79,7 +89,7 @@ export class Game {
     const deltaSeconds = Math.min((now - this.lastTime) / 1000, PHYSICS_CONFIG.maxDeltaSeconds);
     this.lastTime = now;
     this.update(deltaSeconds);
-    this.renderer.render();
+    this.renderer.render(deltaSeconds);
     requestAnimationFrame(this.frame);
   }
 
@@ -94,6 +104,14 @@ export class Game {
     const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
     const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
     moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius);
+  }
+
+  syncFlashlightButton(enabled) {
+    const button = document.querySelector("#flashlight-toggle");
+    if (!button) return;
+    button.textContent = enabled ? "LIGHT ON" : "LIGHT OFF";
+    button.setAttribute("aria-pressed", String(enabled));
+    button.classList.toggle("is-on", enabled);
   }
 
   stop() {
