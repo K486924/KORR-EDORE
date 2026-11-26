@@ -33,6 +33,8 @@ export class Renderer {
     this.camera = new THREE.PerspectiveCamera(74, 1, 0.05, 90);
     this.camera.position.set(0, 1.62, 7.5);
     this.camera.rotation.order = "YXZ";
+    // Keep camera-attached viewmodel meshes and flashlight in the scene traversal.
+    this.scene.add(this.camera);
 
     this.renderer = new THREE.WebGLRenderer({
       canvas, antialias: true, powerPreference: "high-performance",
