@@ -64,7 +64,7 @@ export class Renderer {
 
   buildWorld() {
     this.levelRoot = new THREE.Group();
-    world.add(this.levelRoot);
+    this.scene.add(this.levelRoot);
     const world = this.levelRoot;
     const wallTex = makeNoiseTexture("#343a36", "#c0b69a");
     const floorTex = makeNoiseTexture("#242827", "#8d8878");
