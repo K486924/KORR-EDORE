@@ -41,3 +41,27 @@ body { background: #080a0b; }
 @media (hover: hover) and (pointer: fine) {
   #touch-pad { opacity: .28; }
 }
+
+#flashlight-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: max(68px, calc(env(safe-area-inset-bottom) + 68px));
+  min-width: 104px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #a9b8ae66;
+  border-radius: 12px;
+  color: #d5ddd7;
+  background: #111a19e8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  touch-action: manipulation;
+  user-select: none;
+}
+#flashlight-toggle.is-on {
+  color: #f0e9d4;
+  border-color: #d6cba477;
+  background: #35352bcf;
+}
+#flashlight-toggle:active { transform: scale(.97); }
