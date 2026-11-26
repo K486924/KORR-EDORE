@@ -17,8 +17,9 @@ for (let z = 0; z < 80; z++) {
 }
 for (let x = 0; x <= 12; x++) add(x, 0);
 
-export const SOLID_CELLS = Object.freeze(cells);
-export const SOLID_CELL_KEYS = new Set(cells.map(cell => `${cell.x},${cell.z}`));
+const uniqueCells = [...new Map(cells.map(cell => [`${cell.x},${cell.z}`, cell])).values()];
+export const SOLID_CELLS = Object.freeze(uniqueCells);
+export const SOLID_CELL_KEYS = new Set(uniqueCells.map(cell => `${cell.x},${cell.z}`));
 
 export function cellCenter(x, z) {
   const half = GRID.cellSize * 0.5;
