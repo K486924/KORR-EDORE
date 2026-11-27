@@ -11,6 +11,8 @@ export class Game {
     this.move = { x: 0, z: 0 };
     this.yaw = 0;
     this.pitch = 0;
+    this.inVehicle = false;
+    this.carSpeed = 0;
     this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
     this.setupInput(canvas);
@@ -23,7 +25,7 @@ export class Game {
     const onKey = (event, down) => {
       const key = event.key.toLowerCase();
       if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
-      if (down && !event.repeat && key === "e" && this.isNearGate()) this.syncGateButton(this.renderer.toggleGate());
+      if (down && !event.repeat && key === "e") this.handleContextInteraction();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
         event.preventDefault();
         down ? this.keys.add(key) : this.keys.delete(key);
@@ -65,7 +67,7 @@ export class Game {
       interactionButton.addEventListener("pointerdown", event => {
         event.preventDefault();
         event.stopPropagation();
-        if (this.isNearGate()) this.syncGateButton(this.renderer.toggleGate());
+        this.handleContextInteraction();
       });
     }
 
@@ -139,6 +141,52 @@ export class Game {
     this.updateInteractionUI();
     this.lookDelta.yaw = 0;
     this.lookDelta.pitch = 0;
+  }
+
+  isNearCar() {
+    const car = this.renderer.arrivalCar;
+    return !!car && Math.hypot(this.renderer.camera.position.x - car.position.x, this.renderer.camera.position.z - car.position.z) < 3.2;
+  }
+
+  handleContextInteraction() {
+    if (this.inVehicle) {
+      this.inVehicle = false;
+      const car = this.renderer.arrivalCar;
+      this.renderer.camera.position.set(car.position.x + 1.8, 1.62, car.position.z);
+      this.yaw = car.rotation.y;
+      this.renderer.camera.rotation.set(0, this.yaw, 0, "YXZ");
+      this.carSpeed = 0;
+      return;
+    }
+    if (this.isNearCar()) {
+      this.inVehicle = true;
+      this.carSpeed = 0;
+      this.yaw = this.renderer.arrivalCar.rotation.y;
+      this.pitch = -0.22;
+      return;
+    }
+    if (this.isNearGate()) this.syncGateButton(this.renderer.toggleGate());
+  }
+
+  updateVehicle(delta) {
+    const car = this.renderer.arrivalCar;
+    const throttle = (this.keys.has("w") || this.keys.has("arrowup") || this.move.z < 0 ? 1 : 0) -
+      (this.keys.has("s") || this.keys.has("arrowdown") || this.move.z > 0 ? 1 : 0);
+    const steering = (this.keys.has("d") || this.keys.has("arrowright") || this.move.x > 0 ? 1 : 0) -
+      (this.keys.has("a") || this.keys.has("arrowleft") || this.move.x < 0 ? 1 : 0);
+    const target = throttle * 7.5;
+    this.carSpeed += (target - this.carSpeed) * Math.min(1, delta * (throttle ? 1.8 : 2.8));
+    this.yaw += steering * Math.sign(this.carSpeed || 1) * Math.min(1, Math.abs(this.carSpeed) / 4) * delta * 0.72;
+    car.rotation.y = this.yaw;
+    car.position.x -= Math.sin(this.yaw) * this.carSpeed * delta;
+    car.position.z -= Math.cos(this.yaw) * this.carSpeed * delta;
+    for (const wheel of this.renderer.carWheels || []) wheel.rotation.x += this.carSpeed * delta / 0.38;
+    const behindX = Math.sin(this.yaw) * 6.4;
+    const behindZ = Math.cos(this.yaw) * 6.4;
+    this.renderer.camera.position.set(car.position.x + behindX, 3.0, car.position.z + behindZ);
+    this.renderer.camera.lookAt(car.position.x, 1.0, car.position.z);
+    const button = document.querySelector("#interact-button");
+    if (button) { button.hidden = false; button.textContent = "EXIT VEHICLE · E"; }
   }
 
   isNearGate() {
