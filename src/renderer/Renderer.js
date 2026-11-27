@@ -358,6 +358,16 @@ export class Renderer {
     box([1.15, 0.82, 0.72], [genX - 0.35, 0.58, genZ - 0.15], darkMetal);
     box([0.52, 0.12, 0.48], [genX - 0.35, 1.05, genZ - 0.15], wood);
     cylinder(0.07, 0.07, 0.72, [genX - 0.8, 1.65, genZ - 0.75], darkMetal, 8);
+    this.generatorSwitch = new THREE.Group();
+    const switchPlate = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.42, 0.07), darkMetal);
+    const switchLever = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.22, 0.07), materials.metal(0xb58b43, 0.7));
+    switchLever.position.set(0, 0.03, 0.07);
+    this.generatorSwitch.add(switchPlate, switchLever);
+    this.generatorSwitch.position.set(genX - 0.95, 1.15, genZ + 2.43);
+    world.add(this.generatorSwitch);
+    this.interactions.register(this.generatorSwitch, { id: "generator-start", label: "START GENERATOR", maxDistance: 2.8 });
+    this.generatorSwitchLever = switchLever;
+
     // Hinged service door and a visible brass padlock.
     this.generatorDoorPivot = new THREE.Group();
     this.generatorDoorPivot.position.set(genX + 0.36, 0.05, genZ + 2.42);
