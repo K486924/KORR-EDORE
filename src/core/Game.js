@@ -608,6 +608,14 @@ export class Game {
     }
     if (target.id === "interior-exit") {
       label = this.renderer.interiorLevel?.exitState?.open ? "STEP OUTSIDE · E" : "OPEN FRONT DOOR · E";
+    } else if (target.id === "bedroom-drawer") {
+      label = this.ritualKeysFound.has("ritual-key-bedroom") ? "EMPTY DRAWER" : "SEARCH BEDROOM DRAWER · E";
+    } else if (target.id === "reception-drawer") {
+      label = this.ritualKeysFound.has("ritual-key-reception") ? "EMPTY DRAWER" : "SEARCH RECEPTION DRAWER · E";
+    } else if (target.id === "ritual-room-door") {
+      label = this.ritualKeysFound.size === 3 ? "UNLOCK THREE LOCKS · E" : "THREE LOCKS · " + this.ritualKeysFound.size + "/3 KEYS";
+    } else if (target.id === "ritual-circle") {
+      label = "BEGIN THE CHILLA · E";
     } else if (target.id.startsWith("house-door-")) {
       const door = this.renderer.houseDoors.find(item => item.id === target.id);
       label = door?.open ? "ENTER FARMHOUSE · E" : "OPEN FRONT DOOR · E";
