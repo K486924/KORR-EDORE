@@ -144,6 +144,7 @@ export class Game {
   }
 
   update(delta) {
+    if (this.levelTransitioning) return;
     if (this.inVehicle) {
       this.updateVehicle(delta);
       this.updateInteractionUI();
@@ -214,7 +215,24 @@ export class Game {
     return !!car && Math.hypot(this.renderer.camera.position.x - car.position.x, this.renderer.camera.position.z - car.position.z) < 3.2;
   }
 
+  transitionLevel(label, callback) {
+    if (this.levelTransitioning) return;
+    this.levelTransitioning = true;
+    this.keys.clear();
+    this.move.x = 0; this.move.z = 0;
+    const overlay = document.querySelector("#level-transition");
+    const title = document.querySelector("#level-transition-label");
+    if (title) title.textContent = label;
+    overlay?.classList.add("is-visible");
+    window.setTimeout(() => {
+      callback();
+      this.levelTransitioning = false;
+      overlay?.classList.remove("is-visible");
+    }, 380);
+  }
+
   handleContextInteraction() {
+    if (this.levelTransitioning) return;
     if (this.inVehicle) {
       this.exitVehicle();
       return;
@@ -224,9 +242,11 @@ export class Game {
     if (target.id.startsWith("house-door-")) {
       const open = this.renderer.toggleHouseDoor(target.id);
       if (open) {
-        this.renderer.enterInterior();
-        this.yaw = 0; this.pitch = 0;
-        this.showGameToast("You step inside the farmhouse.");
+        this.transitionLevel("ENTERING FARMHOUSE", () => {
+          this.renderer.enterInterior();
+          this.yaw = 0; this.pitch = 0;
+          this.showGameToast("You step inside the farmhouse.");
+        });
       } else this.showGameToast("Front door closed.");
       return;
     }
@@ -235,9 +255,11 @@ export class Game {
       if (open) {
         this.showGameToast("The front door is open. Step outside.");
       } else {
-        this.renderer.exitInterior();
-        this.yaw = 0; this.pitch = 0;
-        this.showGameToast("Back in the farmhouse grounds.");
+        this.transitionLevel("LEAVING FARMHOUSE", () => {
+          this.renderer.exitInterior();
+          this.yaw = 0; this.pitch = 0;
+          this.showGameToast("Back in the farmhouse grounds.");
+        });
       }
       return;
     }
@@ -497,6 +519,7 @@ export class Game {
   updateInteractionUI() {
     const button = document.querySelector("#interact-button");
     if (!button) return;
+    if (this.levelTransitioning) { button.hidden = true; return; }
     if (this.inVehicle) {
       button.hidden = false;
       button.textContent = "EXIT VEHICLE · E";
