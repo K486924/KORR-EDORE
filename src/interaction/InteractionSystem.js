@@ -20,7 +20,16 @@ export class InteractionSystem {
     const hits = this.raycaster.intersectObjects(active.map(target => target.object), true);
     this.current = null;
     for (const hit of hits) {
-      const target = active.find(item => item.object === hit.object || item.object.getObjectById(hit.object.id));
+      // Prefer the most specific registered object. A vehicle root is also an
+      // ancestor of its doors/bonnet; it must not swallow those part targets.
+      let target = null;
+      let bestDepth = -1;
+      for (const item of active) {
+        if (item.object !== hit.object && !item.object.getObjectById(hit.object.id)) continue;
+        let depth = 0;
+        for (let node = item.object; node; node = node.parent) depth++;
+        if (depth > bestDepth) { bestDepth = depth; target = item; }
+      }
       if (target && hit.distance <= target.maxDistance) { this.current = target; break; }
     }
     return this.current;
