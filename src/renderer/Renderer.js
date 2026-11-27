@@ -3,6 +3,7 @@ import { GRID, SOLID_CELLS, cellCenter } from "../level/layout.js";
 import { VIEWMODEL_CONFIG } from "../config/viewmodel.js";
 import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
+import { PlayerAvatar } from "../player/PlayerAvatar.js";
 
 function makeNoiseTexture(base, speckle, size = 256) {
   const canvas = document.createElement("canvas");
@@ -33,7 +34,9 @@ export class Renderer {
     this.camera = new THREE.PerspectiveCamera(74, 1, 0.05, 90);
     this.camera.position.set(0, 1.62, 7.5);
     this.camera.rotation.order = "YXZ";
+    // Layer 0 is the first-person world; the local body is kept on layer 1.
     // Keep camera-attached viewmodel meshes and flashlight in the scene traversal.
+    this.camera.layers.set(0);
     this.scene.add(this.camera);
 
     this.renderer = new THREE.WebGLRenderer({
@@ -58,12 +61,36 @@ export class Renderer {
     this._lightWorldPosition = new THREE.Vector3();
     this._beamTargetWorld = new THREE.Vector3();
     this.levelRoot = null;
+    this.localAvatar = null;
+    this.avatarLoadError = null;
+    this.disposed = false;
     this.buildWorld();
     this.buildViewModel();
     this.buildFlashlight();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
+  }
+
+  async loadLocalAvatar(options = {}) {
+    try {
+      const avatar = await PlayerAvatar.create({ ...options, renderLayer: 1 });
+      if (this.disposed) {
+        avatar.dispose();
+        return null;
+      }
+      this.localAvatar?.dispose();
+      this.localAvatar = avatar.addTo(this.scene);
+      return avatar;
+    } catch (error) {
+      this.avatarLoadError = error;
+      console.warn("Player avatar could not be loaded; continuing in first person.", error);
+      return null;
+    }
+  }
+
+  updateLocalAvatar({ x, z, yaw, speed, delta }) {
+    this.localAvatar?.update({ x, z, yaw, speed, delta });
   }
 
   box(parent, size, position, material, cast = true, receive = true) {
@@ -398,6 +425,9 @@ export class Renderer {
   }
 
   dispose() {
+    this.disposed = true;
+    this.localAvatar?.dispose();
+    this.localAvatar = null;
     this.resizeObserver?.disconnect();
     this.disposeWorld();
     this.camera.remove(this.flashlight);
