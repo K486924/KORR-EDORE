@@ -4,21 +4,37 @@ const status = document.querySelector("#boot-status");
 
 function showStartupError(error) {
   console.error("KORR EDORE startup failed:", error);
-  if (status) {
-    const message = error instanceof Error ? (error.stack || error.message) : String(error);
-    status.textContent = `Startup error: ${message}`;
-    status.style.whiteSpace = "normal";
-    status.style.overflowWrap = "anywhere";
-    status.style.fontSize = "14px";
-    status.style.lineHeight = "1.5";
+  const message = error instanceof Error
+    ? (error.stack || error.message || error.name)
+    : String(error);
+  if (panel) {
+    panel.classList.remove("hidden");
+    panel.style.display = "block";
+    panel.style.width = "min(94vw, 680px)";
+    panel.style.maxHeight = "80vh";
+    panel.style.overflow = "auto";
+    panel.style.textAlign = "left";
+    let details = document.querySelector("#boot-error-details");
+    if (!details) {
+      details = document.createElement("pre");
+      details.id = "boot-error-details";
+      details.style.cssText = "white-space:pre-wrap;overflow-wrap:anywhere;max-height:55vh;overflow:auto;color:#ffd6c9;font:12px/1.45 monospace;margin:16px 0 0;text-align:left;user-select:text;";
+      panel.appendChild(details);
+    }
+    details.textContent = "STARTUP ERROR\\n\\n" + message;
   }
-  if (panel) panel.classList.remove("hidden");
+  if (status) status.textContent = "The game could not start. Error details below:";
 }
+
+window.addEventListener("error", event => {
+  if (event.error) showStartupError(event.error);
+  else showStartupError(event.message || "Unknown script error");
+});
+window.addEventListener("unhandledrejection", event => showStartupError(event.reason));
 
 async function boot() {
   try {
-    // Dynamic import ensures module-resolution failures are shown in the boot panel.
-    const { Game } = await import("./core/Game.js");
+    const { Game } = await import("./core/Game.js?diagnostic=2");
     const game = new Game(canvas);
     game.start();
 
@@ -26,7 +42,6 @@ async function boot() {
     window.setTimeout(() => panel?.classList.add("hidden"), 1800);
     window.setTimeout(() => panel?.remove(), 3200);
 
-    // The avatar is optional; it must never prevent the world from starting.
     game.renderer.loadLocalAvatar({ gender: "male", height: 1.72 })
       .catch(error => console.warn("Optional player model failed to load:", error));
   } catch (error) {
