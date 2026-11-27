@@ -2,11 +2,14 @@ const canvas = document.querySelector("#game-canvas");
 const panel = document.querySelector("#boot-panel");
 const status = document.querySelector("#boot-status");
 
-function showStartupError(error) {
-  console.error("KORR EDORE startup failed:", error);
+function showStartupError(error, source = null) {
+  console.error("KORR EDORE startup failed:", error, source || "");
   const message = error instanceof Error
     ? (error.stack || error.message || error.name)
     : String(error);
+  const location = source
+    ? `\\n\\nSOURCE: ${source.filename || "unknown"}\\nLINE: ${source.lineno ?? "?"}  COLUMN: ${source.colno ?? "?"}`
+    : "";
   if (panel) {
     panel.classList.remove("hidden");
     panel.style.display = "block";
@@ -21,20 +24,23 @@ function showStartupError(error) {
       details.style.cssText = "white-space:pre-wrap;overflow-wrap:anywhere;max-height:55vh;overflow:auto;color:#ffd6c9;font:12px/1.45 monospace;margin:16px 0 0;text-align:left;user-select:text;";
       panel.appendChild(details);
     }
-    details.textContent = "STARTUP ERROR\\n\\n" + message;
+    details.textContent = "STARTUP ERROR\n\n" + message + location;
   }
   if (status) status.textContent = "The game could not start. Error details below:";
 }
 
 window.addEventListener("error", event => {
-  if (event.error) showStartupError(event.error);
-  else showStartupError(event.message || "Unknown script error");
+  showStartupError(event.error || event.message || "Unknown script error", {
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno
+  });
 });
 window.addEventListener("unhandledrejection", event => showStartupError(event.reason));
 
 async function boot() {
   try {
-    const { Game } = await import("./core/Game.js?diagnostic=2");
+    const { Game } = await import("./core/Game.js?diagnostic=3");
     const game = new Game(canvas);
     game.start();
 
