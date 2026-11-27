@@ -371,6 +371,7 @@ export class Game {
       this.storyStage = 9;
       this.updateStoryUI();
       this.showGameToast("You step into the salt circle. Somewhere below, the generator stops. A voice answers from inside the walls.");
+      this.playDistantKnocks();
       return;
     }
     if (target.id === "story-diary") {
@@ -420,6 +421,7 @@ export class Game {
         this.storyStage = 5;
         this.updateStoryUI();
         this.showGameToast("The generator catches. The farmhouse falls unnaturally quiet. Three slow knocks answer from somewhere inside.");
+        this.playDistantKnocks();
       } else {
         this.showGameToast("The generator is running. It sounds strained.");
       }
@@ -567,6 +569,34 @@ export class Game {
     const current = chapters[Math.min(this.storyStage, chapters.length - 1)];
     title.textContent = current[0];
     objective.textContent = current[1];
+  }
+
+  playDistantKnocks() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    try {
+      this.ritualAudioContext ||= new AudioContextClass();
+      const context = this.ritualAudioContext;
+      context.resume().catch(() => {});
+      const start = context.currentTime + 0.06;
+      for (let i = 0; i < 3; i++) {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const at = start + i * 0.78;
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(74, at);
+        oscillator.frequency.exponentialRampToValueAtTime(43, at + 0.16);
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.linearRampToValueAtTime(0.22, at + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.24);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(at);
+        oscillator.stop(at + 0.26);
+      }
+    } catch (error) {
+      console.warn("Ritual knock audio unavailable:", error);
+    }
   }
 
   showGameToast(message) {
