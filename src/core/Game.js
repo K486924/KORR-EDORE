@@ -509,9 +509,11 @@ export class Game {
       const index = Number(target.id.split("-").pop());
       label = this.renderer.legacyVehicleTargets?.[index]?.getLabel?.() || label;
     }
-    if (target.id.startsWith("house-door-")) {
+    if (target.id === "interior-exit") {
+      label = this.renderer.interiorLevel?.exitState?.open ? "STEP OUTSIDE · E" : "OPEN FRONT DOOR · E";
+    } else if (target.id.startsWith("house-door-")) {
       const door = this.renderer.houseDoors.find(item => item.id === target.id);
-      label = door?.open ? "CLOSE FRONT DOOR · E" : "OPEN FRONT DOOR · E";
+      label = door?.open ? "ENTER FARMHOUSE · E" : "OPEN FRONT DOOR · E";
     } else if (target.id.startsWith("car-tire-")) {
       label = "REPLACE DAMAGED TYRE · E";
     } else if (target.id.startsWith("spare-tire-")) {
