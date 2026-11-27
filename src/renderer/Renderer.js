@@ -208,6 +208,8 @@ export class Renderer {
       box([0.55, 0.18, 0.55], [x, 3.08, 8.4], stone);
     }
     this.gateLeaves = [];
+    this.gateCollisionCells = new Set();
+    for (let x = 14; x <= 25; x++) this.gateCollisionCells.add(x + ",48");
     this.gateOpenAmount = 0;
     this.gateTargetOpen = 0;
     for (const side of [-1, 1]) {
@@ -428,6 +430,10 @@ export class Renderer {
   toggleGate() {
     this.gateTargetOpen = this.gateTargetOpen > 0.5 ? 0 : 1;
     return this.gateTargetOpen > 0.5;
+  }
+
+  getGateCollisionCells() {
+    return this.gateOpenAmount < 0.9 ? this.gateCollisionCells : null;
   }
 
   setFlashlightEnabled(enabled) {
