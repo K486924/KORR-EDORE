@@ -29,6 +29,13 @@
       <button data-move="back" aria-label="Move backward">↓</button>
       <button data-move="right" aria-label="Move right">→</button>
     </nav>
+    <section id="player-status" aria-label="Player status">
+      <div class="status-row"><span>HEALTH</span><strong id="health-value">100%</strong></div>
+      <div class="status-track health-track"><i id="health-fill"></i></div>
+      <div class="status-row stamina-row"><span>STAMINA</span><strong id="stamina-value">100%</strong></div>
+      <div class="status-track stamina-track"><i id="stamina-fill"></i></div>
+    </section>
+    <button id="sprint-button" type="button" aria-label="Hold to sprint" aria-pressed="false">SPRINT</button>
     <section id="vehicle-hud" hidden><strong>SEDAN</strong><span id="vehicle-speed">0 km/h</span><span id="spare-count">SPARES · 1</span></section>
     <button id="interact-button" type="button" hidden>OPEN GATE · E</button>
     <button id="flashlight-toggle" type="button" aria-label="Toggle flashlight" aria-pressed="false">LIGHT OFF</button>
