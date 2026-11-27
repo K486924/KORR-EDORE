@@ -50,12 +50,22 @@ export function createFarmhouseInterior(scene, interactions) {
   box([1.6, 0.22, 15.0], [6.8, upperY, -6.25], floor);
   box([2.0, 0.22, 6.0], [5.0, upperY, -10.75], floor);
   box([2.0, 0.22, 2.7], [5.0, upperY, -0.35], floor);
+  const upperSolidStart = solidMeshes.length;
+  // Upper-storey perimeter walls keep the landing and bedrooms enclosed.
+  box([thick, 2.85, 15.15], [-7.62, 5.05, -6.25], plaster, root, true);
+  box([thick, 2.85, 15.15], [7.62, 5.05, -6.25], plaster, root, true);
+  box([15.25, 2.85, thick], [0, 5.05, -13.82], plaster, root, true);
+  box([5.05, 2.85, thick], [-5.05, 5.05, 1.25], plaster, root, true);
+  box([5.05, 2.85, thick], [5.05, 5.05, 1.25], plaster, root, true);
   // Upstairs partitions and bedroom openings.
   box([thick, 2.85, 8.4], [-2.15, 5.05, -9.6], plaster, root, true);
   box([thick, 2.85, 6.0], [2.15, 5.05, -10.8], plaster, root, true);
   box([4.8, 2.85, thick], [-4.95, 5.05, -7.2], plaster, root, true);
   box([4.8, 2.85, thick], [4.95, 5.05, -7.2], plaster, root, true);
   box([15.2, 0.18, 15.0], [0, 6.65, -6.25], trim);
+  const groundSolidMeshes = solidMeshes.slice(0, upperSolidStart);
+  const upperSolidMeshes = solidMeshes.slice(upperSolidStart);
+  upperSolidMeshes.forEach(mesh => { mesh.userData.collisionEnabled = false; });
 
   // Walkable ramp beneath the timber stair treads. Player height follows this
   // ramp in Game.update(), while the visible treads make it read as stairs.
@@ -167,5 +177,5 @@ export function createFarmhouseInterior(scene, interactions) {
     }
     return currentOffset > rise * 0.5 ? rise : 0;
   };
-  return { root, solidMeshes, exitState, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
+  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, exitState, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
 }
