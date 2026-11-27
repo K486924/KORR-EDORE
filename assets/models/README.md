@@ -1,11 +1,12 @@
 # Character model asset
 
-Place the supplied `HumanModels.glb` file in this directory.
+The supplied archive is stored at:
 
-Expected path:
-`assets/models/HumanModels.glb`
+`assets/models/human-models-set-malefemale-rigged.zip`
 
-The GLB supplied for KORR EDORE contains:
+The game extracts `source/HumanModels.glb` from this ZIP in the browser at runtime. You do not need to extract or upload a second copy of the GLB.
+
+The GLB contains:
 - `Man`: rigged male character
 - `Woman`: rigged female character
 - `Man (NonRig)` and `Woman (NonRig)`: non-rigged variants
@@ -13,6 +14,4 @@ The GLB supplied for KORR EDORE contains:
 
 The rigged variants each contain a 152-joint skeleton. The file contains no animation clips, so characters load in their bind pose until procedural pose / animation logic is added.
 
-The runtime loader in `src/characters/CharacterFactory.js` deliberately selects only the rigged variants. It clones the full scene with Three.js SkeletonUtils so the skeleton references remain valid, then hides the extra variants.
-
-Keep this asset local to the project. Do not rename the GLB or the rigged scene nodes without updating the loader.
+The runtime loader in `src/characters/CharacterFactory.js` reads the ZIP from this directory, extracts only the rigged GLB entry, and hides the extra variants. Keep the archive filename and internal GLB path unchanged unless the loader is updated too.
