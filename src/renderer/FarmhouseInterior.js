@@ -107,10 +107,11 @@ export function createFarmhouseInterior(scene, interactions) {
     hinge.position.set(side * 2.525, 0.25, 1.25);
     root.add(hinge);
     const leaf = box([2.525, 2.65, 0.13], [-side * 1.2625, 1.325, 0], wood, hinge, true);
+    leaf.userData.isExitDoor = true;
     box([2.18, 1.78, 0.035], [-side * 1.2625, 1.36, side * 0.085], darkWood, hinge);
     const knob = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), brass);
     knob.position.set(-side * 2.28, 1.35, side * 0.12); hinge.add(knob);
-    exitHinges.push({ hinge, side });
+    exitHinges.push({ hinge, side, leaf });
     interactions.register(leaf, { id: "interior-exit", label: "OPEN FRONT DOOR", maxDistance: 3.2 });
   }
   const exitState = { hinges: exitHinges, open: false, angle: 0 };
@@ -164,13 +165,14 @@ export function createFarmhouseInterior(scene, interactions) {
     root.add(hinge);
     const leaf = box([1.25, 2.65, 0.16], [-side * 0.625, 1.325, 0], darkWood, hinge, true);
     leaf.userData.floorLevel = 1;
+    leaf.userData.isRitualDoorLeaf = true;
     leaf.userData.collisionEnabled = false;
     upperSolidMeshes.push(leaf);
     box([0.94, 1.82, 0.045], [-side * 0.625, 1.34, side * 0.095], wood, hinge);
     const plate = box([0.16, 0.30, 0.045], [-side * 0.625, 1.35, side * 0.13], brass, hinge);
     const lock = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.018, 8, 14), brass);
     lock.position.set(-side * 0.625, 1.28, side * 0.17); hinge.add(lock);
-    ritualDoorHinges.push({ hinge, side });
+    ritualDoorHinges.push({ hinge, side, leaf });
     interactions.register(leaf, { id: "ritual-room-door", label: "THREE LOCKS · FIND THE KEYS", maxDistance: 3.0 });
   }
   const ritualDoor = { hinges: ritualDoorHinges, open: false, angle: 0 };
