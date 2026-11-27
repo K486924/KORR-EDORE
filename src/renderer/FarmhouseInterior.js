@@ -77,6 +77,7 @@ export function createFarmhouseInterior(scene, interactions) {
   const stairX = 5.0, stairStartZ = -2.0, stairEndZ = -7.55;
   const rise = 3.30, run = stairStartZ - stairEndZ;
   const stairAngle = Math.atan2(rise, run);
+  const stairSolidMeshes = [];
   const ramp = box([1.65, 0.16, Math.hypot(run, rise)], [stairX, 1.90, (stairStartZ + stairEndZ) / 2], darkWood);
   ramp.rotation.x = stairAngle;
   for (let i = 0; i < 12; i++) {
@@ -87,11 +88,13 @@ export function createFarmhouseInterior(scene, interactions) {
     box([1.72, 0.11, 0.06], [stairX, y + 0.07, z - 0.17], trim);
   }
   for (const x of [4.12, 5.88]) {
-    const rail = box([0.10, 0.12, Math.hypot(run, rise)], [x, 2.05, (stairStartZ + stairEndZ) / 2], wood);
+    const rail = box([0.10, 0.12, Math.hypot(run, rise)], [x, 2.05, (stairStartZ + stairEndZ) / 2], wood, root, true);
     rail.rotation.x = stairAngle;
+    stairSolidMeshes.push(rail);
     for (let i = 0; i < 7; i++) {
       const t = (i + 0.5) / 7;
-      box([0.07, 0.82, 0.07], [x, 0.45 + t * rise, stairStartZ - t * run], trim);
+      const post = box([0.07, 0.82, 0.07], [x, 0.45 + t * rise, stairStartZ - t * run], trim, root, true);
+      stairSolidMeshes.push(post);
     }
   }
 
@@ -183,5 +186,5 @@ export function createFarmhouseInterior(scene, interactions) {
     }
     return currentOffset > rise * 0.5 ? rise : 0;
   };
-  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, exitState, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
+  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, stairSolidMeshes, exitState, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
 }
