@@ -174,6 +174,7 @@ export class Game {
     const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
     const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
     moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
+    camera.position.y = 1.62 + this.renderer.getFloorOffsetAt(camera.position.x, camera.position.z);
 
     const actualX = camera.position.x - startX;
     const actualZ = camera.position.z - startZ;
@@ -220,7 +221,22 @@ export class Game {
     if (!target) return;
     if (target.id.startsWith("house-door-")) {
       const open = this.renderer.toggleHouseDoor(target.id);
-      this.showGameToast(open ? "Front door opened." : "Front door closed.");
+      if (open) {
+        this.renderer.enterInterior();
+        this.yaw = 0; this.pitch = 0;
+        this.showGameToast("You step inside the farmhouse.");
+      } else this.showGameToast("Front door closed.");
+      return;
+    }
+    if (target.id === "interior-exit") {
+      const open = this.renderer.toggleInteriorExitDoor();
+      if (open) {
+        this.showGameToast("The front door is open. Step outside.");
+      } else {
+        this.renderer.exitInterior();
+        this.yaw = 0; this.pitch = 0;
+        this.showGameToast("Back in the farmhouse grounds.");
+      }
       return;
     }
     if (target.id === "arrival-car") {
@@ -284,6 +300,7 @@ export class Game {
       this.hasGeneratorKey = true;
       this.storyStage = Math.max(this.storyStage, 3);
       this.renderer.setGeneratorKeyCollected(true);
+      if (this.renderer.interiorLevel?.generatorKey) this.renderer.interiorLevel.generatorKey.visible = false;
       this.updateStoryUI();
       this.showGameToast("You found the brass key. It is unusually cold.");
       return;
@@ -307,6 +324,7 @@ export class Game {
         this.generatorStarted = true;
         this.renderer.generatorSwitchLever.rotation.x = -0.65;
         this.renderer.storyRitualBook.visible = true;
+        if (this.renderer.interiorLevel?.ritualBook) this.renderer.interiorLevel.ritualBook.visible = true;
         this.renderer.elapsed = 120;
         this.storyStage = 5;
         this.updateStoryUI();
@@ -318,6 +336,7 @@ export class Game {
     }
     if (target.id === "story-ritual-book") {
       this.renderer.storyRitualBook.visible = false;
+      if (this.renderer.interiorLevel?.ritualBook) this.renderer.interiorLevel.ritualBook.visible = false;
       this.storyStage = 6;
       this.updateStoryUI();
       this.showGameToast("The book opens by itself. A page is marked: THE CHILLA MUST BEGIN AT 12:00.");
