@@ -56,7 +56,7 @@ export class Renderer {
     this.noiseCurrent = 0;
     this.noiseNext = Math.random() * 2 - 1;
     this.dipTimer = 0;
-    this.flashlightEnabled = true;
+    this.flashlightEnabled = false;
     this.beamDirection = new THREE.Vector3(0, 0, -1);
     this._lightWorldPosition = new THREE.Vector3();
     this._beamTargetWorld = new THREE.Vector3();
