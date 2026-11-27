@@ -4,6 +4,7 @@ import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
+import { InteractionSystem } from "../interaction/InteractionSystem.js";
 
 export class Renderer {
   constructor(canvas) {
@@ -44,6 +45,7 @@ export class Renderer {
     this.localAvatar = null;
     this.avatarLoadError = null;
     this.disposed = false;
+    this.interactions = new InteractionSystem(this.camera);
     this.buildWorld();
     this.buildViewModel();
     this.buildFlashlight();
@@ -236,6 +238,7 @@ export class Renderer {
       }
       world.add(gate);
       this.gateLeaves.push({ group: gate, side });
+      this.interactions.register(gate, { id: "farmhouse-gate-" + side, label: "OPEN / CLOSE GATE", maxDistance: 5 });
     }
 
     // A parked family saloon, ready for the arrival sequence to be added.
@@ -281,6 +284,7 @@ export class Renderer {
     car.rotation.y = 0.08;
     world.add(car);
     this.arrivalCar = car;
+    this.interactions.register(car, { id: "arrival-car", label: "ENTER VEHICLE", maxDistance: 4.2 });
 
     // Two lower side wings from the player's farmhouse sketches.
     for (const side of [-1, 1]) {
@@ -334,6 +338,7 @@ export class Renderer {
     lockLoop.position.set(0.82, 0.99, 0.12); this.generatorDoorPivot.add(lockLoop);
     world.add(this.generatorDoorPivot);
     this.generatorDoorOpen = false;
+    this.interactions.register(this.generatorDoorPivot, { id: "generator-door", label: "GENERATOR ROOM", maxDistance: 3.5 });
     this.generatorDoorPosition = { x: genX + 0.9, z: genZ + 2.5 };
 
     // The uncle's brass generator key rests on his bedroom writing desk.
@@ -347,6 +352,7 @@ export class Renderer {
     keyTooth.position.set(-2.65, 1.08, -0.72);
     this.generatorKeyMesh.add(keyRing, keyStem, keyTooth);
     world.add(this.generatorKeyMesh);
+    this.interactions.register(this.generatorKeyMesh, { id: "generator-key", label: "TAKE BRASS KEY", maxDistance: 3.0, enabled: () => this.generatorKeyMesh.visible });
     this.generatorKeyPosition = { x: -2.8, z: -0.72 };
     // Collision cells keep the shed solid; the front doorway opens only after unlocking.
     this.generatorCollisionCells = new Set();
@@ -777,6 +783,7 @@ export class Renderer {
     this.disposeWorld();
     this.camera.remove(this.flashlight);
     this.camera.remove(this.flashlightTarget);
+    this.interactions?.dispose();
     if (this.viewModel) {
       this.camera.remove(this.viewModel);
       this.viewModel.traverse(object => {
