@@ -18,6 +18,9 @@ export class Game {
     this.hasGeneratorKey = false;
     this.storyStage = 0;
     this.generatorStarted = false;
+    this.ritualKeysFound = new Set();
+    this.ritualRoomOpened = false;
+    this.chillaStarted = false;
     this.carSpeed = 0;
     this.spareTires = 1;
     this.offroadWear = 0;
@@ -308,6 +311,68 @@ export class Game {
       }
       return;
     }
+    if (target.id === "bedroom-drawer" || target.id === "reception-drawer") {
+      if (this.storyStage < 6) {
+        this.showGameToast("The drawers can wait. First, find the book that appeared after the generator started.");
+        return;
+      }
+      const bedroom = target.id === "bedroom-drawer";
+      const keyId = bedroom ? "ritual-key-bedroom" : "ritual-key-reception";
+      const key = this.renderer.interiorLevel?.ritualKeys?.[keyId];
+      if (!key || this.ritualKeysFound.has(keyId)) {
+        this.showGameToast("The drawer is empty.");
+        return;
+      }
+      this.renderer.openInteriorDrawer(bedroom ? "bedroom" : "reception");
+      key.visible = true;
+      this.showGameToast(bedroom
+        ? "The bedroom drawer slides open. Something brass catches the light."
+        : "Inside the reception drawer: another cold brass key.");
+      return;
+    }
+    if (target.id.startsWith("ritual-key-")) {
+      if (this.storyStage < 6) {
+        this.showGameToast("You should read the ritual book before searching for these keys.");
+        return;
+      }
+      const key = this.renderer.interiorLevel?.ritualKeys?.[target.id];
+      if (!key?.visible || this.ritualKeysFound.has(target.id)) return;
+      key.visible = false;
+      this.ritualKeysFound.add(target.id);
+      if (this.ritualKeysFound.size === 3) {
+        this.storyStage = 7;
+        this.updateStoryUI();
+        this.showGameToast("Three keys. Three locks. The upstairs room is waiting.");
+      } else {
+        this.showGameToast("A cold brass key. " + this.ritualKeysFound.size + " of 3 found.");
+      }
+      return;
+    }
+    if (target.id === "ritual-room-door") {
+      if (this.ritualKeysFound.size < 3) {
+        this.showGameToast("Three locks. The keys are hidden in the bedroom drawer, beneath the living-room mat and inside the reception drawer.");
+        return;
+      }
+      if (!this.ritualRoomOpened) {
+        this.ritualRoomOpened = true;
+        this.renderer.toggleRitualRoomDoor();
+        this.storyStage = 8;
+        this.updateStoryUI();
+        this.showGameToast("The three locks turn one after another. The upstairs door opens by itself.");
+      } else {
+        this.showGameToast("The ritual chamber stands open. The salt circle waits.");
+      }
+      return;
+    }
+    if (target.id === "ritual-circle") {
+      if (!this.ritualRoomOpened || this.chillaStarted) return;
+      this.chillaStarted = true;
+      this.renderer.startChillaSequence();
+      this.storyStage = 9;
+      this.updateStoryUI();
+      this.showGameToast("You step into the salt circle. Somewhere below, the generator stops. A voice answers from inside the walls.");
+      return;
+    }
     if (target.id === "story-diary") {
       this.storyStage = Math.max(this.storyStage, 1);
       this.updateStoryUI();
@@ -364,8 +429,10 @@ export class Game {
       this.renderer.storyRitualBook.visible = false;
       if (this.renderer.interiorLevel?.ritualBook) this.renderer.interiorLevel.ritualBook.visible = false;
       this.storyStage = 6;
+      const matKey = this.renderer.interiorLevel?.ritualKeys?.["ritual-key-mat"];
+      if (matKey) matKey.visible = true;
       this.updateStoryUI();
-      this.showGameToast("The book opens by itself. A page is marked: THE CHILLA MUST BEGIN AT 12:00.");
+      this.showGameToast("The book opens by itself. A page is marked: THE CHILLA MUST BEGIN AT 12:00. Three keys. Three locks.");
       return;
     }
     if (target.id.startsWith("farmhouse-gate-")) {
@@ -492,7 +559,10 @@ export class Game {
       ["THE POWER ROOM", "Unlock the detached generator room."],
       ["THE POWER ROOM", "Start the generator."],
       ["AFTER THE LIGHTS", "Find the book that appeared inside the house."],
-      ["THE FIRST WARNING", "The ritual is real. Search the farmhouse for signs of what your uncle did."]
+      ["THE FIRST WARNING", "Search the bedroom drawer, living-room mat and reception drawer for three keys."],
+      ["THREE LOCKS", "Take all three keys to the locked upstairs room."],
+      ["THE SEALED ROOM", "Enter the ritual chamber. The salt circle is waiting."],
+      ["THE CHILLA", "The circle has been disturbed. Find out what answered."]
     ];
     const current = chapters[Math.min(this.storyStage, chapters.length - 1)];
     title.textContent = current[0];
