@@ -113,6 +113,72 @@ export function createFarmhouseInterior(scene, interactions) {
   }
   const exitState = { hinges: exitHinges, open: false, angle: 0 };
 
+  // Three hidden keys begin the original "three keys, one room" puzzle.
+  const ritualKeys = {};
+  const keyMaterial = brass;
+  const makeKey = (id, position, label) => {
+    const group = new THREE.Group();
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.022, 8, 16), keyMaterial);
+    ring.rotation.x = Math.PI / 2;
+    const shaft = box([0.30, 0.035, 0.035], [0.18, 0, 0], keyMaterial, group);
+    const tooth = box([0.045, 0.085, 0.035], [0.29, -0.045, 0], keyMaterial, group);
+    group.add(ring);
+    group.position.set(...position);
+    group.visible = false;
+    root.add(group);
+    interactions.register(group, { id, label, maxDistance: 2.4, enabled: () => group.visible });
+    ritualKeys[id] = group;
+    return group;
+  };
+  const bedroomDrawer = new THREE.Group();
+  box([0.72, 0.72, 0.65], [-6.75, 0.42, -1.25], darkWood, bedroomDrawer);
+  box([0.62, 0.23, 0.035], [-6.75, 0.55, -0.91], wood, bedroomDrawer);
+  const bedroomPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
+  bedroomPull.position.set(-6.75, 0.55, -0.86); bedroomDrawer.add(bedroomPull);
+  root.add(bedroomDrawer);
+  interactions.register(bedroomDrawer, { id: "bedroom-drawer", label: "SEARCH BEDROOM DRAWER", maxDistance: 2.5 });
+  makeKey("ritual-key-bedroom", [-6.75, 0.94, -1.25], "TAKE FIRST RITUAL KEY");
+
+  const livingMat = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.025, 2.8), fabric);
+  livingMat.position.set(-5.0, 0.31, -9.1); root.add(livingMat);
+  makeKey("ritual-key-mat", [-5.0, 0.37, -9.1], "TAKE SECOND RITUAL KEY");
+
+  const receptionDrawer = new THREE.Group();
+  box([0.78, 0.36, 0.52], [3.0, 0.82, -1.65], darkWood, receptionDrawer);
+  box([0.68, 0.22, 0.035], [3.0, 0.82, -1.36], wood, receptionDrawer);
+  const receptionPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
+  receptionPull.position.set(3.0, 0.82, -1.31); receptionDrawer.add(receptionPull);
+  root.add(receptionDrawer);
+  interactions.register(receptionDrawer, { id: "reception-drawer", label: "SEARCH RECEPTION DRAWER", maxDistance: 2.5 });
+  makeKey("ritual-key-reception", [3.0, 1.42, -1.65], "TAKE THIRD RITUAL KEY");
+
+  const ritualDoorHinges = [];
+  for (const side of [-1, 1]) {
+    const hinge = new THREE.Group();
+    hinge.position.set(side * 1.25, 3.72, -7.18);
+    root.add(hinge);
+    const leaf = box([1.25, 2.65, 0.16], [-side * 0.625, 1.325, 0], darkWood, hinge, true);
+    box([0.94, 1.82, 0.045], [-side * 0.625, 1.34, side * 0.095], wood, hinge);
+    const plate = box([0.16, 0.30, 0.045], [-side * 0.625, 1.35, side * 0.13], brass, hinge);
+    const lock = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.018, 8, 14), brass);
+    lock.position.set(-side * 0.625, 1.28, side * 0.17); hinge.add(lock);
+    ritualDoorHinges.push({ hinge, side });
+    interactions.register(leaf, { id: "ritual-room-door", label: "THREE LOCKS · FIND THE KEYS", maxDistance: 3.0 });
+  }
+  const ritualDoor = { hinges: ritualDoorHinges, open: false, angle: 0 };
+  // A salt circle and unlit candles wait behind the three-lock door.
+  const ritualChamber = new THREE.Group();
+  const saltRing = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.055, 8, 64), mat(0xe5ddc9));
+  saltRing.rotation.x = Math.PI / 2;
+  saltRing.position.set(0, 3.69, -10.65); ritualChamber.add(saltRing);
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const candle = box([0.12, 0.32, 0.12], [Math.cos(a) * 1.8, 3.87, -10.65 + Math.sin(a) * 1.8], pale, ritualChamber);
+    const wick = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
+    wick.position.set(candle.position.x, 4.05, candle.position.z); ritualChamber.add(wick);
+  }
+  root.add(ritualChamber);
+
   // Uncle's bedroom: bed, wardrobe, writing desk, diary and brass key.
   box([3.0, 0.34, 2.15], [-5.15, 0.52, -1.35], darkWood);
   box([2.85, 0.28, 1.95], [-5.15, 0.82, -1.35], pale);
@@ -186,5 +252,5 @@ export function createFarmhouseInterior(scene, interactions) {
     }
     return currentOffset > rise * 0.5 ? rise : 0;
   };
-  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, stairSolidMeshes, exitState, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
+  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, stairSolidMeshes, exitState, ritualDoor, ritualKeys, ritualChamber, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
 }
