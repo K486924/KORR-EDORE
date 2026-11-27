@@ -2,7 +2,8 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/SkeletonUtils.js";
 
-const MODEL_URL = new URL("../../assets/models/HumanModels.glb", import.meta.url);
+const MODEL_ZIP_URL = new URL("../../assets/models/human-models-set-malefemale-rigged.zip", import.meta.url);
+const MODEL_ENTRY = "source/HumanModels.glb";
 const RIG_NAMES = Object.freeze({
   male: "Man",
   female: "Woman"
@@ -10,11 +11,83 @@ const RIG_NAMES = Object.freeze({
 
 let modelPromise = null;
 
+async function extractZipEntry(zipBuffer, wantedName) {
+  const view = new DataView(zipBuffer);
+  const bytes = new Uint8Array(zipBuffer);
+  const decoder = new TextDecoder();
+  const minEocd = Math.max(0, bytes.length - 65557);
+  let eocd = -1;
+
+  for (let offset = bytes.length - 22; offset >= minEocd; offset--) {
+    if (view.getUint32(offset, true) === 0x06054b50) {
+      eocd = offset;
+      break;
+    }
+  }
+  if (eocd < 0) throw new Error("ZIP central directory was not found");
+
+  const entryCount = view.getUint16(eocd + 10, true);
+  let cursor = view.getUint32(eocd + 16, true);
+
+  for (let i = 0; i < entryCount; i++) {
+    if (view.getUint32(cursor, true) !== 0x02014b50) {
+      throw new Error("Invalid ZIP central directory entry");
+    }
+    const method = view.getUint16(cursor + 10, true);
+    const compressedSize = view.getUint32(cursor + 20, true);
+    const uncompressedSize = view.getUint32(cursor + 24, true);
+    const nameLength = view.getUint16(cursor + 28, true);
+    const extraLength = view.getUint16(cursor + 30, true);
+    const commentLength = view.getUint16(cursor + 32, true);
+    const localOffset = view.getUint32(cursor + 42, true);
+    const name = decoder.decode(bytes.subarray(cursor + 46, cursor + 46 + nameLength));
+
+    if (name === wantedName) {
+      if (view.getUint32(localOffset, true) !== 0x04034b50) {
+        throw new Error("Invalid ZIP local file header");
+      }
+      const localNameLength = view.getUint16(localOffset + 26, true);
+      const localExtraLength = view.getUint16(localOffset + 28, true);
+      const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+      const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+
+      let result;
+      if (method === 0) {
+        result = compressed.buffer;
+      } else if (method === 8) {
+        if (typeof DecompressionStream === "undefined") {
+          throw new Error("This browser cannot decompress the character ZIP");
+        }
+        const stream = new Blob([compressed]).stream()
+          .pipeThrough(new DecompressionStream("deflate-raw"));
+        result = await new Response(stream).arrayBuffer();
+      } else {
+        throw new Error(`Unsupported ZIP compression method: ${method}`);
+      }
+
+      if (result.byteLength !== uncompressedSize) {
+        throw new Error("Extracted character model size does not match ZIP metadata");
+      }
+      return result;
+    }
+
+    cursor += 46 + nameLength + extraLength + commentLength;
+  }
+
+  throw new Error(`The ZIP does not contain ${wantedName}`);
+}
+
 function loadModel() {
   if (!modelPromise) {
-    modelPromise = new GLTFLoader().loadAsync(MODEL_URL.href).catch(error => {
+    modelPromise = (async () => {
+      const response = await fetch(MODEL_ZIP_URL.href);
+      if (!response.ok) throw new Error(`Character ZIP request failed: HTTP ${response.status}`);
+      const zipBuffer = await response.arrayBuffer();
+      const glbBuffer = await extractZipEntry(zipBuffer, MODEL_ENTRY);
+      return new GLTFLoader().parseAsync(glbBuffer, MODEL_ZIP_URL.href);
+    })().catch(error => {
       modelPromise = null;
-      throw new Error(`Unable to load procedural character pack at ${MODEL_URL.pathname}: ${error.message}`);
+      throw new Error(`Unable to load character model from ${MODEL_ZIP_URL.pathname}: ${error.message}`);
     });
   }
   return modelPromise;
