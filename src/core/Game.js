@@ -423,6 +423,10 @@ export class Game {
     button.hidden = !target;
     if (!target) return;
     let label = target.label;
+    if (target.id.startsWith("legacy-vehicle-part-")) {
+      const index = Number(target.id.split("-").pop());
+      label = this.renderer.legacyVehicleTargets?.[index]?.getLabel?.() || label;
+    }
     if (target.id.startsWith("house-door-")) {
       const door = this.renderer.houseDoors.find(item => item.id === target.id);
       label = door?.open ? "CLOSE FRONT DOOR · E" : "OPEN FRONT DOOR · E";
