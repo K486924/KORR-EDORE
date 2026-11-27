@@ -59,9 +59,10 @@ export async function createCharacter({ gender = "male", height = 1.72 } = {}) {
 
   const scale = height / size.y;
   instance.scale.setScalar(scale);
-  const scaledBounds = new THREE.Box3().setFromObject(instance);
-  const center = scaledBounds.getCenter(new THREE.Vector3());
-  instance.position.set(-center.x, -scaledBounds.min.y, -center.z);
+  instance.updateMatrixWorld(true);
+  const normalizedBounds = new THREE.Box3().setFromObject(selected);
+  const center = normalizedBounds.getCenter(new THREE.Vector3());
+  instance.position.set(-center.x, -normalizedBounds.min.y, -center.z);
   instance.userData.characterGender = gender;
   instance.userData.rigged = true;
   instance.userData.hasAnimationClips = gltf.animations.length > 0;
