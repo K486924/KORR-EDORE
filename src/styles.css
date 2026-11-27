@@ -118,3 +118,26 @@ body { background: #080a0b; }
   background: #d7c49a;
   box-shadow: 0 0 5px #d7c49a;
 }
+
+
+#vehicle-hud {
+  position: fixed;
+  left: 50%;
+  bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid #c5ad7a66;
+  border-radius: 12px;
+  color: #eee5d2;
+  background: #101713dd;
+  box-shadow: 0 8px 24px #0007;
+  font-size: 11px;
+  letter-spacing: .08em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#vehicle-hud[hidden] { display: none; }
+#vehicle-hud span { color: #c5c9bd; }
