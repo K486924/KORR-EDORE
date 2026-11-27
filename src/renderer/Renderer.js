@@ -348,6 +348,17 @@ export class Renderer {
     this.generatorKeyMesh.add(keyRing, keyStem, keyTooth);
     world.add(this.generatorKeyMesh);
     this.generatorKeyPosition = { x: -2.8, z: -0.72 };
+    // Collision cells keep the shed solid; the front doorway opens only after unlocking.
+    this.generatorCollisionCells = new Set();
+    const cellKey = (x, z) => Math.floor((x + 10) / 0.5) + "," + Math.floor((z + 16) / 0.5);
+    for (let z = -5.05; z <= -0.05; z += 0.5) {
+      this.generatorCollisionCells.add(cellKey(-17.62, z));
+      this.generatorCollisionCells.add(cellKey(-13.78, z));
+    }
+    for (let x = -17.55; x <= -13.85; x += 0.5) {
+      this.generatorCollisionCells.add(cellKey(x, -5.12));
+      if (x < -15.5 || x > -14.2) this.generatorCollisionCells.add(cellKey(x, -0.48));
+    }
 
 
     // Perimeter fencing: timber posts and rails, with the existing double gate as the entrance.
@@ -633,7 +644,10 @@ export class Renderer {
   }
 
   getGateCollisionCells() {
-    return this.gateOpenAmount < 0.9 ? this.gateCollisionCells : null;
+    const cells = new Set();
+    if (this.gateOpenAmount < 0.9) this.gateCollisionCells.forEach(key => cells.add(key));
+    if (!this.generatorDoorOpen) this.generatorCollisionCells?.forEach(key => cells.add(key));
+    return cells.size ? cells : null;
   }
 
   setFlashlightEnabled(enabled) {
