@@ -132,7 +132,7 @@ export function createFarmhouseInterior(scene, interactions) {
   };
   const bedroomDrawer = new THREE.Group();
   box([0.72, 0.72, 0.65], [-6.75, 0.42, -1.25], darkWood, bedroomDrawer);
-  box([0.62, 0.23, 0.035], [-6.75, 0.55, -0.91], wood, bedroomDrawer);
+  const bedroomDrawerFront = box([0.62, 0.23, 0.035], [-6.75, 0.55, -0.91], wood, bedroomDrawer);
   const bedroomPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
   bedroomPull.position.set(-6.75, 0.55, -0.86); bedroomDrawer.add(bedroomPull);
   root.add(bedroomDrawer);
@@ -145,7 +145,7 @@ export function createFarmhouseInterior(scene, interactions) {
 
   const receptionDrawer = new THREE.Group();
   box([0.78, 0.36, 0.52], [3.0, 0.82, -1.65], darkWood, receptionDrawer);
-  box([0.68, 0.22, 0.035], [3.0, 0.82, -1.36], wood, receptionDrawer);
+  const receptionDrawerFront = box([0.68, 0.22, 0.035], [3.0, 0.82, -1.36], wood, receptionDrawer);
   const receptionPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
   receptionPull.position.set(3.0, 0.82, -1.31); receptionDrawer.add(receptionPull);
   root.add(receptionDrawer);
@@ -169,6 +169,9 @@ export function createFarmhouseInterior(scene, interactions) {
     interactions.register(leaf, { id: "ritual-room-door", label: "THREE LOCKS · FIND THE KEYS", maxDistance: 3.0 });
   }
   const ritualDoor = { hinges: ritualDoorHinges, open: false, angle: 0 };
+  const ritualState = { started: false, light: null, ring: null };
+  ritualState.light = ritualLight;
+  ritualState.ring = saltRing;
   // A salt circle and unlit candles wait behind the three-lock door.
   const ritualChamber = new THREE.Group();
   const saltRing = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.055, 8, 64), mat(0xe5ddc9));
@@ -184,6 +187,7 @@ export function createFarmhouseInterior(scene, interactions) {
     wick.position.set(candle.position.x, 4.05, candle.position.z); ritualChamber.add(wick);
   }
   root.add(ritualChamber);
+  ritualState.chamber = ritualChamber;
 
   // Uncle's bedroom: bed, wardrobe, writing desk, diary and brass key.
   box([3.0, 0.34, 2.15], [-5.15, 0.52, -1.35], darkWood);
@@ -258,5 +262,5 @@ export function createFarmhouseInterior(scene, interactions) {
     }
     return currentOffset > rise * 0.5 ? rise : 0;
   };
-  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, stairSolidMeshes, exitState, ritualDoor, ritualKeys, ritualChamber, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
+  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, stairSolidMeshes, exitState, ritualDoor, ritualKeys, ritualChamber, ritualState, bedroomDrawerFront, receptionDrawerFront, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
 }
