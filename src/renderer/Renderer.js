@@ -6,6 +6,7 @@ import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 import { InteractionSystem } from "../interaction/InteractionSystem.js?v=8";
 import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=2";
+import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=1";
 
 export class Renderer {
   constructor(canvas) {
@@ -50,6 +51,9 @@ export class Renderer {
     this.solidMeshes = [];
     this.houseDoors = [];
     this.buildWorld();
+    this.outdoorSolidMeshes = this.solidMeshes;
+    this.outdoorTargets = this.interactions.targets.slice();
+    this.buildInteriorLevel();
     this.buildViewModel();
     this.buildFlashlight();
     this.resizeObserver = new ResizeObserver(() => this.resize());
@@ -575,6 +579,71 @@ export class Renderer {
     this.camera.rotation.set(0, 0, 0, "YXZ");
   }
 
+  buildInteriorLevel() {
+    this.interiorLevel = createFarmhouseInterior(this.scene, this.interactions);
+    this.interiorLevel.root.visible = false;
+    this.indoorSolidMeshes = this.interiorLevel.solidMeshes;
+    this.indoorTargets = this.interactions.targets.slice(this.outdoorTargets.length);
+    this.interactions.targets = this.outdoorTargets;
+    this.activeLevel = "outdoor";
+  }
+
+  enterInterior() {
+    if (this.activeLevel === "interior" || !this.interiorLevel) return false;
+    this.levelRoot.visible = false;
+    this.interiorLevel.root.visible = true;
+    this.interactions.targets = this.indoorTargets;
+    this.interactions.current = null;
+    this.solidMeshes = this.indoorSolidMeshes;
+    this.activeLevel = "interior";
+    this.camera.position.set(0, 1.62, 0.25);
+    this.camera.rotation.set(0, 0, 0, "YXZ");
+    return true;
+  }
+
+  exitInterior() {
+    if (this.activeLevel !== "interior") return false;
+    this.interiorLevel.root.visible = false;
+    this.levelRoot.visible = true;
+    this.interactions.targets = this.outdoorTargets;
+    this.interactions.current = null;
+    this.solidMeshes = this.outdoorSolidMeshes;
+    this.activeLevel = "outdoor";
+    this.camera.position.set(0, 1.62, 3.55);
+    this.camera.rotation.set(0, 0, 0, "YXZ");
+    return true;
+  }
+
+  toggleInteriorExitDoor() {
+    const state = this.interiorLevel?.exitState;
+    if (!state) return false;
+    state.open = !state.open;
+    return state.open;
+  }
+
+  getFloorOffsetAt(x, z) {
+    return this.activeLevel === "interior"
+      ? this.interiorLevel.floorHeightAt(x, z)
+      : 0;
+  }
+
+  disposeInteriorLevel() {
+    const root = this.interiorLevel?.root;
+    if (!root) return;
+    const geometries = new Set(), materials = new Set();
+    root.traverse(object => {
+      if (object.geometry) geometries.add(object.geometry);
+      if (object.material) {
+        for (const material of Array.isArray(object.material) ? object.material : [object.material])
+          materials.add(material);
+      }
+    });
+    geometries.forEach(geometry => geometry.dispose());
+    materials.forEach(material => material.dispose());
+    this.scene.remove(root);
+    this.interiorLevel = null;
+  }
+
   buildViewModel() {
     const cfg = VIEWMODEL_CONFIG;
     this.viewModel = new THREE.Group();
@@ -824,6 +893,11 @@ export class Renderer {
         door.hinge.rotation.y = door.angle;
       }
     }
+    const exitState = this.interiorLevel?.exitState;
+    if (exitState) {
+      exitState.angle += ((exitState.open ? -1.2 : 0) - exitState.angle) * (1 - Math.exp(-dt * 7.5));
+      exitState.hinge.rotation.y = exitState.angle;
+    }
     if (this.gateLeaves) {
       const gateAlpha = 1 - Math.exp(-dt * 2.4);
       this.gateOpenAmount += (this.gateTargetOpen - this.gateOpenAmount) * gateAlpha;
@@ -886,6 +960,7 @@ export class Renderer {
     this.localAvatar = null;
     this.resizeObserver?.disconnect();
     this.disposeWorld();
+    this.disposeInteriorLevel();
     this.camera.remove(this.flashlight);
     this.camera.remove(this.flashlightTarget);
     this.interactions?.dispose();
