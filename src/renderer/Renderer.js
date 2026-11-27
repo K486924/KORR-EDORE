@@ -521,6 +521,38 @@ export class Renderer {
     box([2.9, 0.1, 0.68], [5.0, 1.32, -1.7], paleFabric);
     for (const x of [4.1, 5.0, 5.9]) box([0.42, 0.42, 0.42], [x, 1.58, -1.7], materials.plaster(0xc9bba4));
 
+    // Story props: the uncle's private diary and an old family photograph.
+    this.storyDiary = new THREE.Group();
+    const diaryCover = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.055, 0.30), materials.darkWood(0x493629));
+    diaryCover.position.set(0, 0, 0); this.storyDiary.add(diaryCover);
+    const diaryPages = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.018, 0.27), materials.fabric(0xd6c9aa));
+    diaryPages.position.set(0, 0.036, 0); this.storyDiary.add(diaryPages);
+    const diarySpine = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.07, 0.31), materials.darkWood(0x30251e));
+    diarySpine.position.set(-0.19, 0.012, 0); this.storyDiary.add(diarySpine);
+    this.storyDiary.position.set(-3.0, 1.13, -0.60);
+    world.add(this.storyDiary);
+    this.interactions.register(this.storyDiary, { id: "story-diary", label: "READ UNCLE'S DIARY", maxDistance: 2.6 });
+
+    this.storyPhotograph = new THREE.Group();
+    const photoFrame = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.42, 0.055), materials.darkWood(0x45382b));
+    const photoFace = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.35, 0.018), materials.fabric(0x9b9a80));
+    photoFace.position.z = 0.037;
+    this.storyPhotograph.add(photoFrame, photoFace);
+    this.storyPhotograph.position.set(-5.0, 0.58, -10.0);
+    this.storyPhotograph.rotation.x = -0.08;
+    world.add(this.storyPhotograph);
+    this.interactions.register(this.storyPhotograph, { id: "story-photo", label: "EXAMINE OLD PHOTOGRAPH", maxDistance: 2.4 });
+
+    this.storyRitualBook = new THREE.Group();
+    const bookCover = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.07, 0.34), materials.darkWood(0x241d1a));
+    const bookPages = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.025, 0.31), materials.fabric(0xc8bda3));
+    bookPages.position.y = 0.045;
+    this.storyRitualBook.add(bookCover, bookPages);
+    this.storyRitualBook.position.set(5.0, 1.43, -1.7);
+    this.storyRitualBook.visible = false;
+    world.add(this.storyRitualBook);
+    this.interactions.register(this.storyRitualBook, { id: "story-ritual-book", label: "TAKE RITUAL BOOK", maxDistance: 2.8, enabled: () => this.storyRitualBook.visible });
+
     // Warm interior window glow remains on after sunset.
     for (const x of [-4.2, 4.2]) {
       const windowGlow = new THREE.PointLight(0xffd59b, 2.0, 5, 2);
