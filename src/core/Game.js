@@ -14,6 +14,8 @@ export class Game {
     this.inVehicle = false;
     this.hasGeneratorKey = false;
     this.carSpeed = 0;
+    this.spareTires = 1;
+    this.offroadWear = 0;
     this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
     this.setupInput(canvas);
@@ -175,13 +177,44 @@ export class Game {
       this.pitch = -0.22;
       return;
     }
+    if (target.id.startsWith("spare-tire-")) {
+      const index = Number(target.id.split("-").pop());
+      const pickup = this.renderer.spareTirePickups?.[index];
+      if (pickup && !pickup.collected) {
+        pickup.collected = true;
+        pickup.mesh.visible = false;
+        this.spareTires++;
+        this.showGameToast("Spare tyre collected. Inventory: " + this.spareTires);
+      }
+      return;
+    }
+    if (target.id.startsWith("car-tire-")) {
+      const index = Number(target.id.split("-").pop()) - 1;
+      const tire = this.renderer.carTireStates?.[index];
+      if (!tire?.blown) return;
+      if (this.spareTires <= 0) {
+        this.showGameToast("No spare tyres. Find one around the driveway.");
+        return;
+      }
+      this.spareTires--;
+      tire.blown = false;
+      tire.health = 1;
+      tire.mesh.scale.y = 1;
+      tire.tireMesh.material.color.setHex(0x171a19);
+      this.showGameToast(tire.label + " tyre replaced. Spares: " + this.spareTires);
+      return;
+    }
     if (target.id === "generator-key") {
       this.hasGeneratorKey = true;
       this.renderer.setGeneratorKeyCollected(true);
       this.showGameToast("Brass key collected. It fits the generator room padlock.");
       return;
     }
-    if (target.id === "generator-door") {
+    if (target.id.startsWith("car-tire-")) {
+      label = "REPLACE DAMAGED TYRE · E";
+    } else if (target.id.startsWith("spare-tire-")) {
+      label = "PICK UP SPARE TYRE · E";
+    } else if (target.id === "generator-door") {
       if (!this.hasGeneratorKey) {
         this.showGameToast("Locked. Find the brass key in the uncle's bedroom.");
       } else {
@@ -201,8 +234,30 @@ export class Game {
       (this.keys.has("s") || this.keys.has("arrowdown") || this.move.z > 0 ? 1 : 0);
     const steering = (this.keys.has("d") || this.keys.has("arrowright") || this.move.x > 0 ? 1 : 0) -
       (this.keys.has("a") || this.keys.has("arrowleft") || this.move.x < 0 ? 1 : 0);
-    const target = throttle * 7.5;
+    const target = throttle * (this.renderer.carTireStates?.some(t => t.blown) ? 3.2 : 7.5);
     this.carSpeed += (target - this.carSpeed) * Math.min(1, delta * (throttle ? 1.8 : 2.8));
+    const roughGround = Math.abs(car.position.x) > 3.2 && car.position.z > -18 && car.position.z < 20;
+    if (roughGround && Math.abs(this.carSpeed) > 3.5) {
+      this.offroadWear += delta;
+      if (this.offroadWear >= 12) {
+        this.offroadWear = 0;
+        const tires = this.renderer.carTireStates || [];
+        const tire = tires.find(t => !t.blown && t.health > 0);
+        if (tire) {
+          tire.health = Math.max(0, tire.health - 0.35);
+          if (tire.health <= 0) {
+            tire.blown = true;
+            tire.mesh.scale.y = 0.62;
+            tire.tireMesh.material.color.setHex(0x090a09);
+            this.showGameToast("TYRE BLOWOUT! Stop and aim at the damaged wheel to replace it.");
+          } else {
+            this.showGameToast(tire.label + " tyre damaged. Avoid rough ground.");
+          }
+        }
+      }
+    } else {
+      this.offroadWear = Math.max(0, this.offroadWear - delta * 0.8);
+    }
     this.yaw -= steering * Math.sign(this.carSpeed || 1) * Math.min(1, Math.abs(this.carSpeed) / 4) * delta * 0.72;
     car.rotation.y = this.yaw;
     const nextX = car.position.x - Math.sin(this.yaw) * this.carSpeed * delta;
