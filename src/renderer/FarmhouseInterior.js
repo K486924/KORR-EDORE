@@ -143,7 +143,7 @@ export function createFarmhouseInterior(scene, interactions) {
   const bedroomDrawerFront = box([0.62, 0.23, 0.035], [-6.75, 0.55, -0.91], wood, bedroomDrawer);
   bedroomDrawerFront.userData.closedZ = bedroomDrawerFront.position.z;
   const bedroomPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
-  bedroomPull.position.set(-6.75, 0.55, -0.86); bedroomDrawer.add(bedroomPull);
+  bedroomPull.position.set(0, 0, 0.05); bedroomDrawerFront.add(bedroomPull);
   root.add(bedroomDrawer);
   interactions.register(bedroomDrawer, { id: "bedroom-drawer", label: "SEARCH BEDROOM DRAWER", maxDistance: 2.5 });
   makeKey("ritual-key-bedroom", [-6.75, 0.48, -1.18], "TAKE FIRST RITUAL KEY");
@@ -163,7 +163,7 @@ export function createFarmhouseInterior(scene, interactions) {
   const receptionDrawerFront = box([0.68, 0.22, 0.035], [1.45, 0.82, -1.36], wood, receptionDrawer);
   receptionDrawerFront.userData.closedZ = receptionDrawerFront.position.z;
   const receptionPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
-  receptionPull.position.set(1.45, 0.82, -1.31); receptionDrawer.add(receptionPull);
+  receptionPull.position.set(0, 0, 0.05); receptionDrawerFront.add(receptionPull);
   root.add(receptionDrawer);
   interactions.register(receptionDrawer, { id: "reception-drawer", label: "SEARCH RECEPTION DRAWER", maxDistance: 2.5 });
   makeKey("ritual-key-reception", [1.45, 0.76, -1.59], "TAKE THIRD RITUAL KEY");
