@@ -23,6 +23,7 @@ export class Game {
     const onKey = (event, down) => {
       const key = event.key.toLowerCase();
       if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
+      if (down && !event.repeat && key === "e" && this.isNearGate()) this.syncGateButton(this.renderer.toggleGate());
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
         event.preventDefault();
         down ? this.keys.add(key) : this.keys.delete(key);
@@ -58,6 +59,15 @@ export class Game {
     };
     canvas.addEventListener("pointerup", endLook);
     canvas.addEventListener("pointercancel", endLook);
+
+    const interactionButton = document.querySelector("#interact-button");
+    if (interactionButton) {
+      interactionButton.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (this.isNearGate()) this.syncGateButton(this.renderer.toggleGate());
+      });
+    }
 
     const flashlightButton = document.querySelector("#flashlight-toggle");
     if (flashlightButton) {
@@ -126,8 +136,32 @@ export class Game {
       speed: actualSpeed,
       delta
     });
+    this.updateInteractionUI();
     this.lookDelta.yaw = 0;
     this.lookDelta.pitch = 0;
+  }
+
+  isNearGate() {
+    const camera = this.renderer.camera;
+    return Math.hypot(camera.position.x, camera.position.z - 8.4) < 3.3;
+  }
+
+  updateInteractionUI() {
+    const button = document.querySelector("#interact-button");
+    if (!button) return;
+    const nearby = this.isNearGate();
+    button.hidden = !nearby;
+    if (nearby) {
+      const open = this.renderer.gateTargetOpen > 0.5;
+      button.textContent = open ? "CLOSE GATE · E" : "OPEN GATE · E";
+      button.setAttribute("aria-label", open ? "Close farmhouse gate" : "Open farmhouse gate");
+    }
+  }
+
+  syncGateButton(open) {
+    const button = document.querySelector("#interact-button");
+    if (!button) return;
+    button.textContent = open ? "CLOSE GATE · E" : "OPEN GATE · E";
   }
 
   syncFlashlightButton(enabled) {
