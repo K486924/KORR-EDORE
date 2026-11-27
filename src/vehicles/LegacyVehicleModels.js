@@ -188,7 +188,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
     const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.25, WR * 1.15, 0.05), darkTrim);
     const spoke2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, WR * 1.15), darkTrim);
     spinGrp.add(tire, rim, spoke, spoke2);
-    wheels.push({ steerGrp, spinGrp, isFront });
+    wheels.push({ steerGrp, spinGrp, tireMesh: tire, mesh: steerGrp, isFront, health: 1, blown: false });
   }
   makeWheel(-0.84, -1.42, true); makeWheel(0.84, -1.42, true); makeWheel(-0.84, 1.42, false); makeWheel(0.84, 1.42, false);
 
