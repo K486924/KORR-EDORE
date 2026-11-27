@@ -12,6 +12,9 @@ export class Game {
     this.yaw = 0;
     this.pitch = 0;
     this.inVehicle = false;
+    this.currentVehicle = null;
+    this.currentVehicleType = null;
+    this.vehicleSpeed = 0;
     this.hasGeneratorKey = false;
     this.carSpeed = 0;
     this.spareTires = 1;
@@ -207,14 +210,7 @@ export class Game {
 
   handleContextInteraction() {
     if (this.inVehicle) {
-      this.inVehicle = false;
-      const hud = document.querySelector("#vehicle-hud");
-      if (hud) hud.hidden = true;
-      const car = this.renderer.arrivalCar;
-      this.renderer.camera.position.set(car.position.x + 1.8, 1.62, car.position.z);
-      this.yaw = car.rotation.y;
-      this.renderer.camera.rotation.set(0, this.yaw, 0, "YXZ");
-      this.carSpeed = 0;
+      this.exitVehicle();
       return;
     }
     const target = this.renderer.interactions.update();
@@ -225,12 +221,7 @@ export class Game {
       return;
     }
     if (target.id === "arrival-car") {
-      this.inVehicle = true;
-      const hud = document.querySelector("#vehicle-hud");
-      if (hud) hud.hidden = false;
-      this.carSpeed = 0;
-      this.yaw = this.renderer.arrivalCar.rotation.y;
-      this.pitch = -0.22;
+      this.mountVehicle(this.renderer.arrivalCar, "car");
       return;
     }
     if (target.id.startsWith("spare-tire-")) {
@@ -264,6 +255,12 @@ export class Game {
       const index = Number(target.id.split("-").pop());
       const legacy = this.renderer.legacyVehicleTargets?.[index];
       legacy?.onInteract?.();
+      const mountType = this.renderer.vehicleMountRequest;
+      if (mountType) {
+        this.renderer.vehicleMountRequest = null;
+        const vehicle = this.renderer.vehicleFleet?.[mountType === "car" ? "sedan" : mountType];
+        if (vehicle) this.mountVehicle(vehicle, mountType);
+      }
       return;
     }
     if (target.id === "generator-key") {
@@ -286,58 +283,101 @@ export class Game {
     }
   }
 
+  mountVehicle(vehicle, type) {
+    if (!vehicle) return;
+    this.currentVehicle = vehicle;
+    this.currentVehicleType = type;
+    this.inVehicle = true;
+    this.vehicleSpeed = 0;
+    this.carSpeed = 0;
+    this.yaw = vehicle.rotation.y;
+    this.pitch = type === "bike" ? -0.08 : -0.04;
+    const hud = document.querySelector("#vehicle-hud");
+    if (hud) {
+      hud.hidden = false;
+      const name = hud.querySelector("strong");
+      if (name) name.textContent = type === "truck" ? "CARGO TRUCK" : type === "bike" ? "REBEL" : "SEDAN";
+    }
+    this.positionVehicleCamera();
+    this.showGameToast(type === "bike" ? "Mounted Rebel bike." : type === "truck" ? "Entered truck cab." : "Entered driver seat.");
+  }
+
+  positionVehicleCamera() {
+    const v = this.currentVehicle;
+    if (!v) return;
+    const yaw = v.rotation.y;
+    let lx = -0.44, ly = 1.22, lz = -0.42;
+    if (this.currentVehicleType === "truck") { lx = -0.56; ly = 2.02; lz = -1.70; }
+    if (this.currentVehicleType === "bike") { lx = 0; ly = 1.04; lz = 0.22; }
+    const wx = Math.cos(yaw) * lx + Math.sin(yaw) * lz;
+    const wz = -Math.sin(yaw) * lx + Math.cos(yaw) * lz;
+    this.renderer.camera.position.set(v.position.x + wx, ly, v.position.z + wz);
+    this.renderer.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
+  }
+
+  exitVehicle() {
+    const v = this.currentVehicle;
+    if (!v) return;
+    const yaw = v.rotation.y;
+    const side = this.currentVehicleType === "bike" ? 1.1 : 1.65;
+    this.inVehicle = false;
+    this.currentVehicle = null;
+    this.currentVehicleType = null;
+    const wx = Math.cos(yaw) * side;
+    const wz = -Math.sin(yaw) * side;
+    this.renderer.camera.position.set(v.position.x + wx, 1.62, v.position.z + wz);
+    this.yaw = yaw;
+    this.pitch = 0;
+    this.renderer.camera.rotation.set(0, this.yaw, 0, "YXZ");
+    const hud = document.querySelector("#vehicle-hud");
+    if (hud) hud.hidden = true;
+    const button = document.querySelector("#interact-button");
+    if (button) button.textContent = "INTERACT · E";
+    this.vehicleSpeed = 0;
+  }
+
   updateVehicle(delta) {
-    const car = this.renderer.arrivalCar;
+    const vehicle = this.currentVehicle;
+    if (!vehicle) { this.exitVehicle(); return; }
     const throttle = (this.keys.has("w") || this.keys.has("arrowup") || this.move.z < 0 ? 1 : 0) -
       (this.keys.has("s") || this.keys.has("arrowdown") || this.move.z > 0 ? 1 : 0);
     const steering = (this.keys.has("d") || this.keys.has("arrowright") || this.move.x > 0 ? 1 : 0) -
       (this.keys.has("a") || this.keys.has("arrowleft") || this.move.x < 0 ? 1 : 0);
-    const target = throttle * (this.renderer.carTireStates?.some(t => t.blown) ? 3.2 : 7.5);
-    this.carSpeed += (target - this.carSpeed) * Math.min(1, delta * (throttle ? 1.8 : 2.8));
-    const roughGround = Math.abs(car.position.x) > 3.2 && car.position.z > -18 && car.position.z < 20;
-    if (roughGround && Math.abs(this.carSpeed) > 3.5) {
-      this.offroadWear += delta;
-      if (this.offroadWear >= 12) {
-        this.offroadWear = 0;
-        const tires = this.renderer.carTireStates || [];
-        const tire = tires.find(t => !t.blown && t.health > 0);
-        if (tire) {
-          tire.health = Math.max(0, tire.health - 0.35);
-          if (tire.health <= 0) {
-            tire.blown = true;
-            tire.mesh.scale.y = 0.62;
-            tire.tireMesh.material.color.setHex(0x090a09);
-            this.showGameToast("TYRE BLOWOUT! Stop and aim at the damaged wheel to replace it.");
-          } else {
-            this.showGameToast(tire.label + " tyre damaged. Avoid rough ground.");
-          }
-        }
+    const type = this.currentVehicleType;
+    const maxSpeed = type === "truck" ? 5.2 : type === "bike" ? 11.5 :
+      (this.renderer.carTireStates?.some(t => t.blown) ? 3.2 : 7.5);
+    const acceleration = type === "truck" ? 1.15 : type === "bike" ? 2.8 : 1.8;
+    this.vehicleSpeed += (throttle * maxSpeed - this.vehicleSpeed) * Math.min(1, delta * (throttle ? acceleration : 2.8));
+    this.yaw -= steering * Math.sign(this.vehicleSpeed || 1) * Math.min(1, Math.abs(this.vehicleSpeed) / 3) * delta *
+      (type === "truck" ? 0.42 : type === "bike" ? 1.05 : 0.72);
+    vehicle.rotation.y = this.yaw;
+    const dx = -Math.sin(this.yaw) * this.vehicleSpeed * delta;
+    const dz = -Math.cos(this.yaw) * this.vehicleSpeed * delta;
+    const beforeX = vehicle.position.x, beforeZ = vehicle.position.z;
+    const radius = type === "truck" ? 1.35 : type === "bike" ? 0.52 : 1.02;
+    moveWithCollisions(vehicle.position, dx, dz, radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
+    if (Math.hypot(vehicle.position.x - beforeX, vehicle.position.z - beforeZ) < Math.hypot(dx, dz) * 0.2) this.vehicleSpeed *= 0.18;
+    const data = vehicle.userData || {};
+    if (type === "bike") {
+      for (const wheel of data.wheels || []) wheel.spin.rotation.x += this.vehicleSpeed * delta / 0.30;
+      if (data.forkPivot) data.forkPivot.rotation.y = steering * 0.38;
+    } else if (type === "truck") {
+      for (const wheel of data.wheels || []) {
+        wheel.spinGrp.rotation.x += this.vehicleSpeed * delta / 0.48;
+        if (wheel.isFront) wheel.steerGrp.rotation.y = steering * 0.32;
       }
     } else {
-      this.offroadWear = Math.max(0, this.offroadWear - delta * 0.8);
+      for (const wheel of this.renderer.carWheels || []) wheel.rotation.x += this.vehicleSpeed * delta / 0.38;
     }
-    this.yaw -= steering * Math.sign(this.carSpeed || 1) * Math.min(1, Math.abs(this.carSpeed) / 4) * delta * 0.72;
-    car.rotation.y = this.yaw;
-    const dx = -Math.sin(this.yaw) * this.carSpeed * delta;
-    const dz = -Math.cos(this.yaw) * this.carSpeed * delta;
-    const beforeX = car.position.x, beforeZ = car.position.z;
-    moveWithCollisions(car.position, dx, dz, 1.02, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
-    if (Math.hypot(car.position.x - beforeX, car.position.z - beforeZ) < Math.hypot(dx, dz) * 0.2) {
-      this.carSpeed *= 0.18;
-    }
-    for (const wheel of this.renderer.carWheels || []) wheel.rotation.x += this.carSpeed * delta / 0.38;
-    const behindX = Math.sin(this.yaw) * 6.4;
-    const behindZ = Math.cos(this.yaw) * 6.4;
-    this.renderer.camera.position.set(car.position.x + behindX, 3.0, car.position.z + behindZ);
-    this.renderer.camera.lookAt(car.position.x, 1.0, car.position.z);
+    this.positionVehicleCamera();
     const button = document.querySelector("#interact-button");
     if (button) { button.hidden = false; button.textContent = "EXIT VEHICLE · E"; }
     const hud = document.querySelector("#vehicle-hud");
     const speed = document.querySelector("#vehicle-speed");
     const spares = document.querySelector("#spare-count");
     if (hud) hud.hidden = false;
-    if (speed) speed.textContent = Math.round(Math.abs(this.carSpeed) * 3.6) + " km/h";
-    if (spares) spares.textContent = "SPARES · " + this.spareTires;
+    if (speed) speed.textContent = Math.round(Math.abs(this.vehicleSpeed) * 3.6) + " km/h";
+    if (spares) spares.textContent = type === "car" ? "SPARES · " + this.spareTires : "WASD / TOUCH · DRIVE";
   }
 
   isNearGeneratorKey() {
