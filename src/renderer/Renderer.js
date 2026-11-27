@@ -492,31 +492,31 @@ export class Renderer {
     const rug = materials.fabric(0x8d7860);
     box([4.0, 0.035, 3.1], [-5.0, 0.36, -9.1], rug, world, false);
     // Living room sofa and cushions.
-    box([3.5, 0.62, 0.92], [-5.0, 0.72, -7.2], wood);
+    solidBox([3.5, 0.62, 0.92], [-5.0, 0.72, -7.2], wood);
     box([3.25, 0.72, 0.22], [-5.0, 1.12, -7.62], fabric);
     for (const x of [-6.35, -5.45, -4.55, -3.65]) box([0.78, 0.42, 0.7], [x, 1.02, -7.12], paleFabric);
-    box([1.8, 0.28, 1.0], [-5.0, 0.52, -10.0], wood);
+    solidBox([1.8, 0.28, 1.0], [-5.0, 0.52, -10.0], wood);
     box([2.4, 0.18, 0.5], [-7.25, 0.42, -8.9], wood);
     box([0.18, 1.15, 2.2], [-7.35, 0.85, -9.0], darkMetal);
     // Dining table, six chairs and a simple kitchen island.
-    box([2.6, 0.16, 1.35], [5.0, 1.02, -9.7], wood);
+    solidBox([2.6, 0.16, 1.35], [5.0, 1.02, -9.7], wood);
     for (const x of [4.0, 5.0, 6.0]) for (const z of [-8.7, -10.7]) {
       box([0.72, 0.14, 0.72], [x, 0.68, z], wood);
       box([0.72, 0.62, 0.12], [x, 1.0, z + (z < -9 ? -0.28 : 0.28)], fabric);
     }
-    box([3.7, 0.88, 0.72], [5.1, 0.78, -5.9], paleFabric);
+    solidBox([3.7, 0.88, 0.72], [5.1, 0.78, -5.9], paleFabric);
     box([3.7, 0.1, 0.72], [5.1, 1.25, -5.9], wood);
     for (const x of [3.6, 5.0, 6.4]) box([0.08, 0.55, 0.58], [x, 1.56, -5.9], trim);
     // Uncle’s bedroom: double bed, bedside tables, wardrobe and writing desk.
-    box([3.3, 0.28, 2.35], [-5.0, 0.53, -1.45], wood);
+    solidBox([3.3, 0.28, 2.35], [-5.0, 0.53, -1.45], wood);
     box([3.1, 0.32, 2.12], [-5.0, 0.78, -1.45], paleFabric);
     box([3.1, 0.28, 0.58], [-5.0, 1.02, -2.15], fabric);
     for (const x of [-6.0, -4.0]) box([0.72, 0.78, 0.68], [x, 0.74, 0.25], wood);
-    box([1.65, 2.35, 0.72], [-7.0, 1.45, -2.0], wood);
+    solidBox([1.65, 2.35, 0.72], [-7.0, 1.45, -2.0], wood);
     box([1.8, 0.12, 0.85], [-3.0, 1.0, -0.6], wood);
     box([0.62, 0.82, 0.62], [-3.0, 0.75, 0.25], fabric);
     // Reception console and a few lived-in details.
-    box([2.8, 0.9, 0.62], [5.0, 0.82, -1.7], wood);
+    solidBox([2.8, 0.9, 0.62], [5.0, 0.82, -1.7], wood);
     box([2.9, 0.1, 0.68], [5.0, 1.32, -1.7], paleFabric);
     for (const x of [4.1, 5.0, 5.9]) box([0.42, 0.42, 0.42], [x, 1.58, -1.7], materials.plaster(0xc9bba4));
 
