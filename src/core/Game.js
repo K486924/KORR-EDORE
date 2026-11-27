@@ -14,7 +14,7 @@ export class Game {
     this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
     this.setupInput(canvas);
-    // Load the world-space player body without delaying the first-person game.\n    this.renderer.loadLocalAvatar({ gender: "male", height: 1.72 });
+    // The optional avatar is loaded after the world starts.
   }
 
   setupInput(canvas) {
