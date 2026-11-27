@@ -28,6 +28,7 @@ function showStartupError(error, source = null) {
     errorPanel.style.width = "min(94vw,680px)";
     errorPanel.style.maxHeight = "80vh";
     errorPanel.style.overflow = "auto";
+    errorPanel.style.pointerEvents = "auto";
     errorPanel.style.padding = "22px";
     errorPanel.style.background = "#100b09";
     errorPanel.style.border = "1px solid #9b5c4d";
@@ -81,7 +82,7 @@ function startAtmosphereMusic() {
     musicGain.gain.value = 0;
     filter.connect(musicGain);
     musicGain.connect(audioContext.destination);
-    for (const [frequency, level] of [[55, 0.42], [82.41, 0.17], [110, 0.08]]) {
+    for (const [frequency, level] of [[55, 0.34], [65.41, 0.20], [82.41, 0.16], [110, 0.07], [164.81, 0.025]]) {
       const oscillator = audioContext.createOscillator();
       const voiceGain = audioContext.createGain();
       oscillator.type = "sine";
