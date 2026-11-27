@@ -1,25 +1,26 @@
 export const GRID = Object.freeze({
   cellSize: 0.5,
-  originX: -3.25,
-  originZ: -30
+  originX: -10,
+  originZ: -16
 });
 
-// The level layout is the single source of truth for solid grid cells.
-// The renderer builds its wall geometry from this list; player collision
-// queries the same cells through SOLID_CELL_KEYS.
+// Collision footprint for the farmhouse shell. The front doorway is left open.
 const cells = [];
 const add = (x, z) => cells.push(Object.freeze({ x, z }));
 
-// Two continuous side walls and the far end wall.
-for (let z = 0; z < 80; z++) {
-  add(0, z);
-  add(12, z);
+// House footprint: x = -8..8, z = -14..1.5. Leave a 2.5 m front entrance.
+for (let x = 4; x <= 35; x++) {
+  if (x >= 18 && x <= 22) continue;
+  add(x, 35);
+  add(x, 4);
 }
-for (let x = 0; x <= 12; x++) add(x, 0);
-
-const uniqueCells = [...new Map(cells.map(cell => [`${cell.x},${cell.z}`, cell])).values()];
+for (let z = 5; z <= 34; z++) {
+  add(4, z);
+  add(35, z);
+}
+const uniqueCells = [...new Map(cells.map(cell => [cell.x + "," + cell.z, cell])).values()];
 export const SOLID_CELLS = Object.freeze(uniqueCells);
-export const SOLID_CELL_KEYS = new Set(uniqueCells.map(cell => `${cell.x},${cell.z}`));
+export const SOLID_CELL_KEYS = new Set(uniqueCells.map(cell => cell.x + "," + cell.z));
 
 export function cellCenter(x, z) {
   const half = GRID.cellSize * 0.5;
