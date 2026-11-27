@@ -6,7 +6,7 @@ import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 import { InteractionSystem } from "../interaction/InteractionSystem.js?v=8";
 import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=2";
-import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=2";
+import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=3";
 
 export class Renderer {
   constructor(canvas) {
