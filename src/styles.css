@@ -141,3 +141,63 @@ body { background: #080a0b; }
 }
 #vehicle-hud[hidden] { display: none; }
 #vehicle-hud span { color: #c5c9bd; }
+
+
+/* Compact survival HUD: top-right, safe-area aware. */
+#player-status {
+  position: fixed;
+  z-index: 12;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  width: min(164px, 42vw);
+  padding: 10px 11px;
+  border: 1px solid #b7c2b044;
+  border-radius: 11px;
+  background: rgba(10, 16, 14, .78);
+  box-shadow: 0 5px 18px #0006;
+  pointer-events: none;
+  backdrop-filter: blur(7px);
+}
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #cbd3cc;
+  font: 700 9px/1.2 system-ui, sans-serif;
+  letter-spacing: .14em;
+}
+.status-row strong { color: #edf0e9; font-size: 10px; font-variant-numeric: tabular-nums; }
+.status-track {
+  height: 6px;
+  margin: 6px 0 9px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff20;
+}
+.status-track i { display: block; width: 100%; height: 100%; border-radius: inherit; transition: width .12s linear; }
+.health-track i { background: linear-gradient(90deg, #8e3932, #c66b58); }
+.stamina-track i { background: linear-gradient(90deg, #82934d, #c4cb79); }
+.stamina-row { margin-top: 1px; }
+#sprint-button {
+  position: fixed;
+  z-index: 14;
+  right: 18px;
+  bottom: max(128px, calc(env(safe-area-inset-bottom) + 128px));
+  min-width: 94px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid #b8c4a477;
+  border-radius: 13px;
+  color: #e5e9d7;
+  background: #263326e8;
+  box-shadow: 0 6px 18px #0007;
+  font: 800 11px system-ui, sans-serif;
+  letter-spacing: .13em;
+  touch-action: none;
+  user-select: none;
+}
+#sprint-button.is-held { background: #657448ed; border-color: #d2d9a6; transform: scale(.97); }
+#sprint-button:disabled { opacity: .42; }
+@media (hover: hover) and (pointer: fine) {
+  #sprint-button { opacity: .82; }
+}
