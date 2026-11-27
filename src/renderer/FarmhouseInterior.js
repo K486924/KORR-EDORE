@@ -145,14 +145,14 @@ export function createFarmhouseInterior(scene, interactions) {
   makeKey("ritual-key-mat", [-5.0, 0.37, -9.1], "TAKE SECOND RITUAL KEY");
 
   const receptionDrawer = new THREE.Group();
-  box([0.78, 0.36, 0.52], [3.0, 0.82, -1.65], darkWood, receptionDrawer);
-  const receptionDrawerFront = box([0.68, 0.22, 0.035], [3.0, 0.82, -1.36], wood, receptionDrawer);
+  box([0.78, 0.36, 0.52], [1.45, 0.82, -1.65], darkWood, receptionDrawer);
+  const receptionDrawerFront = box([0.68, 0.22, 0.035], [1.45, 0.82, -1.36], wood, receptionDrawer);
   receptionDrawerFront.userData.closedZ = receptionDrawerFront.position.z;
   const receptionPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
   receptionPull.position.set(3.0, 0.82, -1.31); receptionDrawer.add(receptionPull);
   root.add(receptionDrawer);
   interactions.register(receptionDrawer, { id: "reception-drawer", label: "SEARCH RECEPTION DRAWER", maxDistance: 2.5 });
-  makeKey("ritual-key-reception", [3.0, 1.42, -1.65], "TAKE THIRD RITUAL KEY");
+  makeKey("ritual-key-reception", [1.45, 1.42, -1.65], "TAKE THIRD RITUAL KEY");
 
   const ritualDoorHinges = [];
   for (const side of [-1, 1]) {
