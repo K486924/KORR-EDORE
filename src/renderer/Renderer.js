@@ -654,7 +654,7 @@ export class Renderer {
     const dt = Math.max(0, Math.min(deltaSeconds, 0.05));
     this.elapsed += dt;
     if (this.skyCycle) {
-      const phase = (this.elapsed / 240) * Math.PI * 2 - Math.PI / 2;
+      const phase = (this.elapsed / 240) * Math.PI * 2 + Math.PI / 2;
       const daylight = Math.max(0, Math.sin(phase) * 0.5 + 0.5);
       const night = 1 - daylight;
       const orbit = phase;
