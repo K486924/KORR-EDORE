@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#080a0b">
+  <meta name="theme-color" content="#080706">
   <title>KORR EDORE</title>
-  <link rel="stylesheet" href="./src/styles.css?v=9">
+  <link rel="stylesheet" href="./src/styles.css?v=10">
   <script type="importmap">
     {
       "imports": {
@@ -17,12 +17,66 @@
 <body>
   <main id="game-root" aria-label="KORR EDORE game">
     <canvas id="game-canvas" aria-label="3D game view"></canvas>
-    <div id="crosshair" aria-hidden="true"><i></i></div>
-    <section id="boot-panel">
-      <p class="eyebrow">A COUNTRYSIDE GETAWAY</p>
-      <h1>KORR EDORE</h1>
-      <p id="boot-status">Arriving at the farmhouse…</p>
+
+    <section id="main-menu" aria-label="Main menu">
+      <div class="menu-grain"></div>
+      <div class="menu-content">
+        <div class="menu-brand">
+          <p class="menu-eyebrow">A FOLK HORROR EXPERIENCE</p>
+          <h1>KORR <span>EDORE</span></h1>
+          <p class="menu-tagline">A chilla. A salt circle. A fire.</p>
+        </div>
+
+        <div class="menu-screen is-active" id="menu-home">
+          <button class="menu-primary" data-menu="play">PLAY</button>
+          <button class="menu-secondary" data-menu="options">OPTIONS</button>
+          <p class="menu-footnote">THE HOUSE REMEMBERS.</p>
+        </div>
+
+        <div class="menu-screen" id="menu-play">
+          <p class="menu-section-label">CHOOSE YOUR STORY</p>
+          <button class="menu-choice menu-primary" id="start-main-story">
+            <span><b>THE MAIN STORY</b><small>The farmhouse · The first chilla</small></span>
+            <i>SOLO / CO-OP</i>
+          </button>
+          <div class="menu-solo-label">ADDITIONAL STORIES · SOLO ONLY</div>
+          <button class="menu-choice" data-coming-soon="Bike Trip"><span><b>BIKE TRIP</b><small>The road home is not the same road.</small></span><i>SOLO</i></button>
+          <button class="menu-choice" data-coming-soon="Goods Delayed"><span><b>GOODS DELAYED</b><small>A delivery that should never have arrived.</small></span><i>SOLO</i></button>
+          <button class="menu-choice" data-coming-soon="Friendly Haunting"><span><b>FRIENDLY HAUNTING</b><small>Some visitors do not knock.</small></span><i>SOLO</i></button>
+          <div class="menu-coop">
+            <button id="host-room" disabled>HOST · SHARE ROOM CODE</button>
+            <button id="join-room" disabled>JOIN · ENTER ROOM CODE</button>
+          </div>
+          <p class="menu-note">Online co-op is being prepared. The main story is playable solo.</p>
+          <button class="menu-back" data-menu="home">← BACK</button>
+        </div>
+
+        <div class="menu-screen" id="menu-options">
+          <p class="menu-section-label">OPTIONS</p>
+          <label class="option-row"><span>ATMOSPHERE MUSIC</span><input id="music-toggle" type="checkbox" checked></label>
+          <label class="option-volume"><span>VOLUME</span><input id="music-volume" type="range" min="0" max="100" value="28"><output id="volume-value">28%</output></label>
+          <button id="fullscreen-option" class="menu-secondary">ENTER FULLSCREEN</button>
+          <p class="menu-note">Fullscreen is requested when supported by your browser. Your device may keep its system bars visible.</p>
+          <button class="menu-back" data-menu="home">← BACK</button>
+        </div>
+      </div>
+      <div class="menu-bottom">KORR EDORE <span>·</span> CHAPTER 01</div>
     </section>
+
+    <section id="loading-screen" aria-live="polite">
+      <p class="loading-kicker">KORR EDORE</p>
+      <h2>THE ARRIVAL</h2>
+      <p id="loading-status">Preparing the farmhouse…</p>
+      <div class="loading-line"><i></i></div>
+    </section>
+
+    <section id="boot-panel" hidden>
+      <p class="eyebrow">KORR EDORE</p>
+      <h1>STARTUP ERROR</h1>
+      <p id="boot-status">The game could not start.</p>
+    </section>
+
+    <div id="crosshair" aria-hidden="true"><i></i></div>
     <nav id="touch-pad" aria-label="Movement controls">
       <button data-move="forward" aria-label="Move forward">↑</button>
       <button data-move="left" aria-label="Move left">←</button>
@@ -46,6 +100,6 @@
     <button id="flashlight-toggle" type="button" aria-label="Toggle flashlight" aria-pressed="false">LIGHT OFF</button>
     <div id="look-hint">DRAG TO LOOK</div>
   </main>
-  <script type="module" src="./src/main.js?bootdiag=11"></script>
+  <script type="module" src="./src/main.js?bootdiag=12"></script>
 </body>
 </html>
