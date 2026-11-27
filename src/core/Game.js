@@ -219,11 +219,7 @@ export class Game {
       this.showGameToast("Brass key collected. It fits the generator room padlock.");
       return;
     }
-    if (target.id.startsWith("car-tire-")) {
-      label = "REPLACE DAMAGED TYRE · E";
-    } else if (target.id.startsWith("spare-tire-")) {
-      label = "PICK UP SPARE TYRE · E";
-    } else if (target.id === "generator-door") {
+    if (target.id === "generator-door") {
       if (!this.hasGeneratorKey) {
         this.showGameToast("Locked. Find the brass key in the uncle's bedroom.");
       } else {
