@@ -46,6 +46,8 @@ export class Renderer {
     this.avatarLoadError = null;
     this.disposed = false;
     this.interactions = new InteractionSystem(this.camera);
+    this.solidMeshes = [];
+    this.houseDoors = [];
     this.buildWorld();
     this.buildViewModel();
     this.buildFlashlight();
@@ -120,6 +122,12 @@ export class Renderer {
       parent.add(mesh);
       return mesh;
     };
+    const solidBox = (size, position, material, parent = world, cast = true) => {
+      const mesh = box(size, position, material, parent, cast);
+      mesh.userData.collisionEnabled = true;
+      this.solidMeshes.push(mesh);
+      return mesh;
+    };
     const cylinder = (radiusTop, radiusBottom, height, position, material, segments = 12) => {
       const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments), material);
       mesh.position.set(...position);
@@ -139,23 +147,22 @@ export class Renderer {
     box([15.8, 0.16, 15.25], [0, 0.25, -6.25], mat(0x9b927f), world, false);
     const wallY = 1.98;
     const wallH = 3.45;
-    // Front wall is split around the open double-door entrance.
-    box([6.65, wallH, 0.42], [-4.675, wallY, 1.5], plaster);
-    box([6.65, wallH, 0.42], [4.675, wallY, 1.5], plaster);
-    box([0.42, wallH, 15.5], [-7.9, wallY, -6.25], plaster);
-    box([0.42, wallH, 15.5], [7.9, wallY, -6.25], plaster);
-    box([16.2, wallH, 0.42], [0, wallY, -14.0], plaster);
-    // Interior partitions: broad openings keep the central hall connected to each room.
+    // First-floor structural walls: visible meshes and collision shapes share the same transforms.
+    solidBox([6.65, wallH, 0.42], [-4.675, wallY, 1.5], plaster);
+    solidBox([6.65, wallH, 0.42], [4.675, wallY, 1.5], plaster);
+    solidBox([0.42, wallH, 15.5], [-7.9, wallY, -6.25], plaster);
+    solidBox([0.42, wallH, 15.5], [7.9, wallY, -6.25], plaster);
+    solidBox([16.2, wallH, 0.42], [0, wallY, -14.0], plaster);
+    // Interior partitions are solid only where the plaster actually exists; door gaps stay clear.
     const innerWall = plaster;
     const iw = 0.16, ih = 3.05;
     for (const x of [-2.05, 2.05]) {
       for (const [z, length] of [[-12.0, 3.0], [-8.1, 3.1], [-3.0, 4.0]]) {
-        box([iw, ih, length], [x, 1.78, z], innerWall);
+        solidBox([iw, ih, length], [x, 1.78, z], innerWall);
       }
     }
-    // Front bedroom/reception partition with two generous door openings.
     for (const [x, length] of [[-5.3, 4.6], [0, 1.2], [5.3, 4.6]]) {
-      box([length, ih, iw], [x, 1.78, -4.65], innerWall);
+      solidBox([length, ih, iw], [x, 1.78, -4.65], innerWall);
     }
     // Ceiling is intentionally omitted in this first interior pass so the roofline and room layout remain readable.
 
@@ -187,11 +194,26 @@ export class Renderer {
       box([0.28, 0.22, 0.28], [x, 3.32, 2.95], foundation);
     }
     box([5.0, 0.2, 0.28], [0, 3.32, 2.95], trim);
+    // Proper double-leaf entrance: each leaf is hinged on its jamb, raycastable and collidable.
     for (const side of [-1, 1]) {
-      const door = box([1.05, 2.65, 0.14], [side * 1.15, 1.65, 1.48], wood);
-      door.rotation.y = side * 1.35;
-      box([0.78, 1.75, 0.035], [side * 1.15, 1.75, 1.39], mat(0x76563b), world, false);
-      cylinder(0.035, 0.035, 0.04, [side * 0.22, 1.5, 1.31], darkMetal, 8).rotation.z = Math.PI / 2;
+      const hinge = new THREE.Group();
+      hinge.position.set(side * 2.1, 0.32, 1.5);
+      world.add(hinge);
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.65, 0.14), wood);
+      leaf.position.set(-side * 0.525, 1.325, 0);
+      leaf.castShadow = true; leaf.receiveShadow = true;
+      hinge.add(leaf);
+      const inset = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.75, 0.035), mat(0x76563b));
+      inset.position.set(-side * 0.525, 1.38, side * 0.075);
+      leaf.add(inset);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), materials.metal(0x9b7b42, 0.35));
+      knob.position.set(-side * 0.91, 1.42, side * 0.105);
+      leaf.add(knob);
+      leaf.userData.collisionEnabled = true;
+      this.solidMeshes.push(leaf);
+      const doorState = { id: "house-door-" + side, hinge, leaf, side, open: false, angle: 0 };
+      this.houseDoors.push(doorState);
+      this.interactions.register(leaf, { id: doorState.id, label: "OPEN FRONT DOOR", maxDistance: 3.4 });
     }
     // Front windows with cream frames and warm glass.
     for (const x of [-5.0, -3.2, 3.2, 5.0]) {
