@@ -272,7 +272,7 @@ export class Renderer {
       }
     }
     const makeTree = (x, z, scale = 1) => {
-      cylinder(0.22 * scale, 0.34 * scale, 3.2 * scale, [x, 1.6 * scale, z], mat(0x594832), 9);
+      cylinder(0.22 * scale, 0.34 * scale, 3.2 * scale, [x, 1.6 * scale, z], materials.darkWood(0x594832), 9);
       for (let i = 0; i < 3; i++) {
         const crown = new THREE.Mesh(new THREE.SphereGeometry((1.35 - i * 0.12) * scale, 11, 9), leafMats[(i + Math.abs(Math.round(x))) % leafMats.length]);
         crown.position.set(x + (i - 1) * 0.25 * scale, (3.25 + i * 0.65) * scale, z + (i % 2) * 0.25 * scale);
