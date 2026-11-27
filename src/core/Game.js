@@ -178,8 +178,16 @@ export class Game {
     this.carSpeed += (target - this.carSpeed) * Math.min(1, delta * (throttle ? 1.8 : 2.8));
     this.yaw -= steering * Math.sign(this.carSpeed || 1) * Math.min(1, Math.abs(this.carSpeed) / 4) * delta * 0.72;
     car.rotation.y = this.yaw;
-    car.position.x -= Math.sin(this.yaw) * this.carSpeed * delta;
-    car.position.z -= Math.cos(this.yaw) * this.carSpeed * delta;
+    const nextX = car.position.x - Math.sin(this.yaw) * this.carSpeed * delta;
+    const nextZ = car.position.z - Math.cos(this.yaw) * this.carSpeed * delta;
+    // Keep the car out of the mansion shell; the grounds and drive remain open.
+    const insideHouse = nextX > -8.6 && nextX < 8.6 && nextZ > -14.6 && nextZ < 2.1;
+    if (insideHouse) {
+      this.carSpeed = 0;
+    } else {
+      car.position.x = nextX;
+      car.position.z = nextZ;
+    }
     for (const wheel of this.renderer.carWheels || []) wheel.rotation.x += this.carSpeed * delta / 0.38;
     const behindX = Math.sin(this.yaw) * 6.4;
     const behindZ = Math.cos(this.yaw) * 6.4;
