@@ -640,6 +640,14 @@ export class Renderer {
     return true;
   }
 
+  liftLivingRoomMat() {
+    const mat = this.interiorLevel?.livingMat;
+    if (!mat) return false;
+    mat.position.y = 0.43;
+    mat.rotation.z = -0.12;
+    return true;
+  }
+
   startChillaSequence() {
     const state = this.interiorLevel?.ritualState;
     if (!state || state.started) return false;
