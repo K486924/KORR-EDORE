@@ -5,7 +5,7 @@ const status = document.querySelector("#boot-status");
 function showStartupError(error) {
   console.error("KORR EDORE startup failed:", error);
   if (status) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? (error.stack || error.message) : String(error);
     status.textContent = `Startup error: ${message}`;
     status.style.whiteSpace = "normal";
     status.style.overflowWrap = "anywhere";
