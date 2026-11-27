@@ -4,7 +4,7 @@ import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
-import { InteractionSystem } from "../interaction/InteractionSystem.js?v=2";
+import { InteractionSystem } from "../interaction/InteractionSystem.js?v=3";
 
 export class Renderer {
   constructor(canvas) {
@@ -690,6 +690,13 @@ export class Renderer {
     return this.generatorDoorOpen;
   }
 
+  toggleHouseDoor(id) {
+    const door = this.houseDoors?.find(item => item.id === id);
+    if (!door) return false;
+    door.open = !door.open;
+    return door.open;
+  }
+
   toggleGate() {
     this.gateTargetOpen = this.gateTargetOpen > 0.5 ? 0 : 1;
     return this.gateTargetOpen > 0.5;
@@ -764,6 +771,14 @@ export class Renderer {
       this.scene.background.setRGB(0.008 + daylight * 0.76, 0.012 + daylight * 0.82, 0.025 + daylight * 0.78);
       if (this.scene.fog?.color) this.scene.fog.color.copy(this.scene.background);
       if (this.clouds) this.clouds.forEach((cloud, i) => { cloud.position.x += dt * (0.18 + i * 0.012); if (cloud.position.x > 55) cloud.position.x = -55; });
+    }
+    if (this.houseDoors) {
+      const doorAlpha = 1 - Math.exp(-dt * 7.5);
+      for (const door of this.houseDoors) {
+        const targetAngle = door.open ? door.side * 1.28 : 0;
+        door.angle += (targetAngle - door.angle) * doorAlpha;
+        door.hinge.rotation.y = door.angle;
+      }
     }
     if (this.gateLeaves) {
       const gateAlpha = 1 - Math.exp(-dt * 2.4);
