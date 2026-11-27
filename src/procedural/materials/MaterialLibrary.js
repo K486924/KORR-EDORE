@@ -53,6 +53,7 @@ function makePattern(kind, seed = 1) {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
+  texture.repeat.set(kind === "wood" ? 4 : 2.5, kind === "wood" ? 4 : 2.5);
   return texture;
 }
 
