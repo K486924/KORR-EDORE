@@ -622,6 +622,7 @@ export class Renderer {
     const state = this.interiorLevel?.exitState;
     if (!state) return false;
     state.open = !state.open;
+    for (const leaf of state.hinges) leaf.leaf.userData.collisionEnabled = !state.open;
     return state.open;
   }
 
@@ -629,6 +630,8 @@ export class Renderer {
     const state = this.interiorLevel?.ritualDoor;
     if (!state) return false;
     state.open = !state.open;
+    for (const leaf of state.hinges)
+      leaf.leaf.userData.collisionEnabled = !state.open && this.currentInteriorFloorOffset > 1.65;
     return state.open;
   }
 
@@ -668,10 +671,14 @@ export class Renderer {
   setInteriorFloorLevel(offset) {
     if (this.activeLevel !== "interior" || !this.interiorLevel) return;
     const upstairs = offset > 1.65;
-    for (const mesh of this.interiorLevel.groundSolidMeshes)
-      mesh.userData.collisionEnabled = !upstairs;
-    for (const mesh of this.interiorLevel.upperSolidMeshes)
-      mesh.userData.collisionEnabled = upstairs;
+    for (const mesh of this.interiorLevel.groundSolidMeshes) {
+      mesh.userData.collisionEnabled = !upstairs &&
+        (!mesh.userData.isExitDoor || !this.interiorLevel.exitState.open);
+    }
+    for (const mesh of this.interiorLevel.upperSolidMeshes) {
+      mesh.userData.collisionEnabled = upstairs &&
+        (!mesh.userData.isRitualDoorLeaf || !this.interiorLevel.ritualDoor.open);
+    }
     for (const mesh of this.interiorLevel.stairSolidMeshes)
       mesh.userData.collisionEnabled = true;
   }
