@@ -471,13 +471,7 @@ export class Renderer {
     box([2.9, 0.1, 0.68], [5.0, 1.32, -1.7], paleFabric);
     for (const x of [4.1, 5.0, 5.9]) box([0.42, 0.42, 0.42], [x, 1.58, -1.7], materials.plaster(0xc9bba4));
 
-    // Soft daylight and a little warm light inside the front rooms.
-    this.scene.add(new THREE.HemisphereLight(0xe8f2ee, 0x65704f, 1.55));
-    this.scene.add(new THREE.AmbientLight(0xffe7c6, 0.42));
-    const sun = new THREE.DirectionalLight(0xffe5bd, 2.0);
-    sun.position.set(-18, 28, 16);
-    sun.castShadow = false;
-    this.scene.add(sun);
+    // Warm interior window glow remains on after sunset.
     for (const x of [-4.2, 4.2]) {
       const windowGlow = new THREE.PointLight(0xffd59b, 2.0, 5, 2);
       windowGlow.position.set(x, 2.1, 0.8);
