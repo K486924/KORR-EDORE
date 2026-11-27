@@ -1,4 +1,4 @@
-import { Renderer } from "../renderer/Renderer.js?build=6";
+import { Renderer } from "../renderer/Renderer.js?build=7";
 import { moveWithCollisions } from "../player/collision.js";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
@@ -265,15 +265,12 @@ export class Game {
     }
     this.yaw -= steering * Math.sign(this.carSpeed || 1) * Math.min(1, Math.abs(this.carSpeed) / 4) * delta * 0.72;
     car.rotation.y = this.yaw;
-    const nextX = car.position.x - Math.sin(this.yaw) * this.carSpeed * delta;
-    const nextZ = car.position.z - Math.cos(this.yaw) * this.carSpeed * delta;
-    // Keep the car out of the mansion shell; the grounds and drive remain open.
-    const insideHouse = nextX > -8.6 && nextX < 8.6 && nextZ > -14.6 && nextZ < 2.1;
-    if (insideHouse) {
-      this.carSpeed = 0;
-    } else {
-      car.position.x = nextX;
-      car.position.z = nextZ;
+    const dx = -Math.sin(this.yaw) * this.carSpeed * delta;
+    const dz = -Math.cos(this.yaw) * this.carSpeed * delta;
+    const beforeX = car.position.x, beforeZ = car.position.z;
+    moveWithCollisions(car.position, dx, dz, 1.02, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
+    if (Math.hypot(car.position.x - beforeX, car.position.z - beforeZ) < Math.hypot(dx, dz) * 0.2) {
+      this.carSpeed *= 0.18;
     }
     for (const wheel of this.renderer.carWheels || []) wheel.rotation.x += this.carSpeed * delta / 0.38;
     const behindX = Math.sin(this.yaw) * 6.4;
