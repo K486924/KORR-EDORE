@@ -201,3 +201,65 @@ body { background: #080a0b; }
 @media (hover: hover) and (pointer: fine) {
   #sprint-button { opacity: .82; }
 }
+
+
+/* Narrative HUD: kept in its own top-left lane, clear of the survival meters. */
+#story-panel {
+  position: fixed;
+  z-index: 11;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(14px, env(safe-area-inset-left));
+  width: min(228px, calc(100vw - 190px));
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid rgba(188, 173, 135, .34);
+  border-left: 2px solid #b69a63;
+  border-radius: 9px;
+  background: rgba(10, 14, 12, .78);
+  box-shadow: 0 5px 18px #0006;
+  pointer-events: none;
+  backdrop-filter: blur(7px);
+}
+#story-panel .story-kicker {
+  margin: 0 0 5px;
+  color: #b7a77f;
+  font: 700 8px/1.2 system-ui, sans-serif;
+  letter-spacing: .16em;
+}
+#story-chapter {
+  display: block;
+  color: #f0e8d7;
+  font: 800 11px/1.3 system-ui, sans-serif;
+  letter-spacing: .1em;
+}
+#story-objective {
+  margin: 5px 0 0;
+  color: #c4cbc2;
+  font: 500 11px/1.4 system-ui, sans-serif;
+}
+#player-status { width: min(142px, 39vw); padding: 8px 9px; }
+#player-status .status-track { margin: 5px 0 7px; height: 5px; }
+#vehicle-hud {
+  bottom: max(86px, calc(env(safe-area-inset-bottom) + 86px));
+  max-width: calc(100vw - 28px);
+  gap: 9px;
+  padding: 8px 10px;
+  font-size: 10px;
+}
+#interact-button {
+  max-width: calc(100vw - 150px);
+  min-height: 44px;
+  padding: 0 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#look-hint { display: none; }
+@media (max-width: 390px) {
+  #story-panel { width: calc(100vw - 178px); min-width: 0; padding: 8px 9px; }
+  #story-objective { font-size: 10px; }
+  #player-status { width: 132px; }
+  #vehicle-hud { gap: 7px; letter-spacing: .03em; }
+  #sprint-button { right: 12px; min-width: 82px; }
+  #flashlight-toggle { right: 12px; min-width: 92px; }
+}
