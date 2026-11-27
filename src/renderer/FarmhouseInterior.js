@@ -158,6 +158,9 @@ export function createFarmhouseInterior(scene, interactions) {
     hinge.position.set(side * 1.25, 3.72, -7.18);
     root.add(hinge);
     const leaf = box([1.25, 2.65, 0.16], [-side * 0.625, 1.325, 0], darkWood, hinge, true);
+    leaf.userData.floorLevel = 1;
+    leaf.userData.collisionEnabled = false;
+    upperSolidMeshes.push(leaf);
     box([0.94, 1.82, 0.045], [-side * 0.625, 1.34, side * 0.095], wood, hinge);
     const plate = box([0.16, 0.30, 0.045], [-side * 0.625, 1.35, side * 0.13], brass, hinge);
     const lock = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.018, 8, 14), brass);
@@ -171,6 +174,9 @@ export function createFarmhouseInterior(scene, interactions) {
   const saltRing = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.055, 8, 64), mat(0xe5ddc9));
   saltRing.rotation.x = Math.PI / 2;
   saltRing.position.set(0, 3.69, -10.65); ritualChamber.add(saltRing);
+  const ritualLight = new THREE.PointLight(0x9b2520, 0, 9, 2);
+  ritualLight.position.set(0, 4.4, -10.65); ritualChamber.add(ritualLight);
+  interactions.register(saltRing, { id: "ritual-circle", label: "BEGIN THE CHILLA", maxDistance: 2.8, enabled: () => ritualDoor.open && !ritualChamber.userData.started });
   for (let i = 0; i < 8; i++) {
     const a = i * Math.PI / 4;
     const candle = box([0.12, 0.32, 0.12], [Math.cos(a) * 1.8, 3.87, -10.65 + Math.sin(a) * 1.8], pale, ritualChamber);
