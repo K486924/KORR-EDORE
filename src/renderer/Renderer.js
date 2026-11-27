@@ -644,6 +644,7 @@ export class Renderer {
     const state = this.interiorLevel?.ritualState;
     if (!state || state.started) return false;
     state.started = true;
+    if (state.chamber) state.chamber.userData.started = true;
     state.ring.material.color.setHex(0x9b2922);
     state.ring.material.emissive?.setHex(0x67110d);
     if (state.ring.material.emissive) state.ring.material.emissiveIntensity = 1.35;
