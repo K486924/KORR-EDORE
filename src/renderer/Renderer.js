@@ -4,7 +4,7 @@ import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
-import { InteractionSystem } from "../interaction/InteractionSystem.js?v=3";
+import { InteractionSystem } from "../interaction/InteractionSystem.js?v=4";
 
 export class Renderer {
   constructor(canvas) {
@@ -87,6 +87,8 @@ export class Renderer {
   }
 
   buildWorld() {
+    this.solidMeshes = [];
+    this.houseDoors = [];
     this.levelRoot = new THREE.Group();
     this.scene.add(this.levelRoot);
     const world = this.levelRoot;
@@ -376,7 +378,9 @@ export class Renderer {
     // Hinged service door and a visible brass padlock.
     this.generatorDoorPivot = new THREE.Group();
     this.generatorDoorPivot.position.set(genX + 0.36, 0.05, genZ + 2.42);
-    box([1.05, 2.12, 0.10], [0.53, 1.06, 0], wood, this.generatorDoorPivot);
+    const generatorDoorLeaf = box([1.05, 2.12, 0.10], [0.53, 1.06, 0], wood, this.generatorDoorPivot);
+    generatorDoorLeaf.userData.collisionEnabled = true;
+    this.solidMeshes.push(generatorDoorLeaf);
     box([0.20, 0.34, 0.12], [0.82, 1.05, 0.08], darkMetal, this.generatorDoorPivot, false);
     const lockBody = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.08), materials.metal(0xb58b43, 0.8));
     lockBody.position.set(0.82, 0.86, 0.12); this.generatorDoorPivot.add(lockBody);
