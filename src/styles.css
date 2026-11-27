@@ -353,3 +353,12 @@ body.game-active #main-menu, body.game-active #loading-screen { display: none !i
   .menu-screen .menu-primary { min-height: 47px; }
   .menu-choice { padding: 7px 11px; }
 }
+
+
+#level-transition {
+  position: fixed; inset: 0; z-index: 80; display: grid; place-items: center;
+  background: #050403; opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .32s ease, visibility .32s ease;
+}
+#level-transition.is-visible { opacity: 1; visibility: visible; }
+#level-transition p { color: #b69b7b; font: 700 10px Georgia,serif; letter-spacing: .3em; }
