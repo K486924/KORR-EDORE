@@ -43,10 +43,10 @@ export function createFarmhouseInterior(scene, interactions) {
 
   // Upper floor with a deliberately open stairwell.
   const upperY = 3.55;
-  box([7.45, 0.22, 15.0], [-3.9, upperY, -6.25], floor);
-  box([1.65, 0.22, 15.0], [6.75, upperY, -6.25], floor);
-  box([2.2, 0.22, 6.0], [4.0, upperY, -10.75], floor);
-  box([2.2, 0.22, 3.0], [4.0, upperY, -0.25], floor);
+  box([7.6, 0.22, 15.0], [-3.8, upperY, -6.25], floor);
+  box([1.6, 0.22, 15.0], [6.8, upperY, -6.25], floor);
+  box([6.0, 0.22, 6.0], [3.0, upperY, -10.75], floor);
+  box([6.0, 0.22, 2.7], [3.0, upperY, -0.35], floor);
   // Upstairs partitions and bedroom openings.
   box([thick, 2.85, 8.4], [-2.15, 5.05, -9.6], plaster, root, true);
   box([thick, 2.85, 6.0], [2.15, 5.05, -10.8], plaster, root, true);
@@ -78,15 +78,19 @@ export function createFarmhouseInterior(scene, interactions) {
   }
 
   // Front entrance: paired hinged leaves, with a usable return interaction.
-  const exitDoor = new THREE.Group();
-  exitDoor.position.set(-1.35, 0.25, 1.25);
-  root.add(exitDoor);
-  const exitLeaf = box([1.35, 2.65, 0.13], [0.675, 1.325, 0], wood, exitDoor);
-  box([1.04, 1.78, 0.035], [0.675, 1.36, 0.085], darkWood, exitDoor);
-  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), brass);
-  knob.position.set(1.18, 1.35, 0.12); exitDoor.add(knob);
-  const exitState = { hinge: exitDoor, open: false, angle: 0 };
-  interactions.register(exitLeaf, { id: "interior-exit", label: "OPEN FRONT DOOR", maxDistance: 3.2 });
+  const exitHinges = [];
+  for (const side of [-1, 1]) {
+    const hinge = new THREE.Group();
+    hinge.position.set(side * 2.525, 0.25, 1.25);
+    root.add(hinge);
+    const leaf = box([2.525, 2.65, 0.13], [-side * 1.2625, 1.325, 0], wood, hinge, true);
+    box([2.18, 1.78, 0.035], [-side * 1.2625, 1.36, side * 0.085], darkWood, hinge);
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), brass);
+    knob.position.set(-side * 2.28, 1.35, side * 0.12); hinge.add(knob);
+    exitHinges.push({ hinge, side });
+    interactions.register(leaf, { id: "interior-exit", label: "OPEN FRONT DOOR", maxDistance: 3.2 });
+  }
+  const exitState = { hinges: exitHinges, open: false, angle: 0 };
 
   // Uncle's bedroom: bed, wardrobe, writing desk, diary and brass key.
   box([3.0, 0.34, 2.15], [-5.15, 0.52, -1.35], darkWood);
