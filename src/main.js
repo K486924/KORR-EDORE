@@ -40,7 +40,7 @@ window.addEventListener("unhandledrejection", event => showStartupError(event.re
 
 async function boot() {
   try {
-    const { Game } = await import("./core/Game.js?diagnostic=7");
+    const { Game } = await import("./core/Game.js?diagnostic=8");
     const game = new Game(canvas);
     game.start();
 
