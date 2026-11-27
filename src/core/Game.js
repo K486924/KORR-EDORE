@@ -307,10 +307,10 @@ export class Game {
         this.generatorStarted = true;
         this.renderer.generatorSwitchLever.rotation.x = -0.65;
         this.renderer.storyRitualBook.visible = true;
-        this.renderer.elapsed = 180;
+        this.renderer.elapsed = 120;
         this.storyStage = 5;
         this.updateStoryUI();
-        this.showGameToast("The generator catches. Every light in the house flickers. Something knocks from upstairs.");
+        this.showGameToast("The generator catches. The farmhouse falls unnaturally quiet. Three slow knocks answer from somewhere inside.");
       } else {
         this.showGameToast("The generator is running. It sounds strained.");
       }
@@ -447,7 +447,7 @@ export class Game {
       ["THE POWER ROOM", "Unlock the detached generator room."],
       ["THE POWER ROOM", "Start the generator."],
       ["AFTER THE LIGHTS", "Find the book that appeared inside the house."],
-      ["THE FIRST WARNING", "The ritual is real. Find a way upstairs and uncover what your uncle hid."]
+      ["THE FIRST WARNING", "The ritual is real. Search the farmhouse for signs of what your uncle did."]
     ];
     const current = chapters[Math.min(this.storyStage, chapters.length - 1)];
     title.textContent = current[0];
