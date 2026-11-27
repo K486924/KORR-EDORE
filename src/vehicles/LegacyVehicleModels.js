@@ -308,52 +308,19 @@ function buildCargoTruck() {
     }
   });
 
-  // 4 Carryable Delivery Cartons inside Cargo Bay
+  // Four detailed cargo cartons retained as model geometry.
+  const cartonMat = new THREE.MeshStandardMaterial({ color: 0xb9834c, roughness: 0.82 });
+  const cartonTape = new THREE.MeshStandardMaterial({ color: 0x80603b, roughness: 0.9 });
   const cartonCoords = [
-    [-0.52, 1.15, 2.55],
-    [ 0.52, 1.15, 2.55],
-    [-0.52, 1.15, 1.65],
-    [ 0.52, 1.15, 1.65]
+    [-0.52, 1.15, 2.55], [0.52, 1.15, 2.55],
+    [-0.52, 1.15, 1.65], [0.52, 1.15, 1.65]
   ];
-  cartonCoords.forEach(([cx_, cy_, cz_], idx) => {
-    const cMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.62, 0.52, 0.58),
-      new THREE.MeshStandardMaterial({ map: cartonTex, roughness: 0.78 })
-    );
-    cMesh.position.set(cx_, cy_, cz_);
-    cMesh.castShadow = true;
-    truck.add(cMesh);
-
-    const cObj = { id: idx + 1, mesh: cMesh, carried: false, delivered: false, localPos: new THREE.Vector3(cx_, cy_, cz_) };
-    truckCartons.push(cObj);
-
-    aimTargets.push({
-      mesh: cMesh,
-      maxDist: 4.4,
-      getLabel: () => {
-        if (!shutterPart.open && !cObj.carried && !cObj.delivered) return "Open Rear Shutter First";
-        if (cObj.delivered) return `Carton #${cObj.id} Delivered`;
-        return state.carryingCarton ? "Already Carrying a Carton" : `Carry Carton #${cObj.id}`;
-      },
-      onInteract: () => {
-        if (cObj.delivered) return;
-        if (!cObj.carried && !shutterPart.open) {
-          showToast("Open the Truck Rear Shutter first!");
-          return;
-        }
-        if (state.carryingCarton) {
-          showToast("You are already carrying a carton! Deliver it to the Haveli Porch.");
-          return;
-        }
-        cObj.carried = true;
-        cObj.mesh.visible = false;
-        state.carryingCarton = cObj;
-        carriedCartonMesh.visible = true;
-        $('carry-badge').classList.add('show');
-        showToast(`Picked up Carton #${cObj.id} — Walk to Haveli Porch & press E to deliver!`);
-      }
-    });
-  });
+  for (const [cx_, cy_, cz_] of cartonCoords) {
+    const carton = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.52, 0.58), cartonMat);
+    carton.position.set(cx_, cy_, cz_); carton.castShadow = true; truck.add(carton);
+    const tape = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.525, 0.585), cartonTape);
+    tape.position.copy(carton.position); truck.add(tape);
+  }
 
   // 6 Heavy Truck Wheels (Front steer, Rear dual/big wheels)
   const wheels = [];
