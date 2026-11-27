@@ -7,7 +7,7 @@ const status = document.querySelector("#boot-status");
 try {
   const game = new Game(canvas);
   game.start();
-  status.textContent = "The building is waiting.";
+  status.textContent = "A quiet afternoon at the farmhouse.";
   window.setTimeout(() => panel.classList.add("hidden"), 1800);
   window.setTimeout(() => panel.remove(), 3200);
 } catch (error) {
