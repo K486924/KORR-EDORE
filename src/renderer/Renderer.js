@@ -598,6 +598,7 @@ export class Renderer {
     this.solidMeshes = this.indoorSolidMeshes;
     this.activeLevel = "interior";
     this.currentInteriorFloorOffset = 0;
+    this.setInteriorFloorLevel(0);
     this.camera.position.set(0, 1.62, 0.25);
     this.camera.rotation.set(0, 0, 0, "YXZ");
     return true;
@@ -628,6 +629,15 @@ export class Renderer {
     if (this.activeLevel !== "interior") return 0;
     this.currentInteriorFloorOffset = this.interiorLevel.floorHeightAt(x, z, this.currentInteriorFloorOffset);
     return this.currentInteriorFloorOffset;
+  }
+
+  setInteriorFloorLevel(offset) {
+    if (this.activeLevel !== "interior" || !this.interiorLevel) return;
+    const upstairs = offset > 1.65;
+    for (const mesh of this.interiorLevel.groundSolidMeshes)
+      mesh.userData.collisionEnabled = !upstairs;
+    for (const mesh of this.interiorLevel.upperSolidMeshes)
+      mesh.userData.collisionEnabled = upstairs;
   }
 
   disposeInteriorLevel() {
