@@ -66,9 +66,11 @@ export function createFarmhouseInterior(scene, interactions) {
   for (const x of [-6.5, -3.4, 3.4, 6.5])
     box([1.7, 2.85, thick], [x, 5.05, -7.2], plaster, root, true);
   box([15.2, 0.18, 15.0], [0, 6.65, -6.25], trim);
-  const groundSolidMeshes = solidMeshes.slice(0, upperSolidStart);
   const upperSolidMeshes = solidMeshes.slice(upperSolidStart);
-  upperSolidMeshes.forEach(mesh => { mesh.userData.collisionEnabled = false; });
+  upperSolidMeshes.forEach(mesh => {
+    mesh.userData.floorLevel = 1;
+    mesh.userData.collisionEnabled = false;
+  });
 
   // Walkable ramp beneath the timber stair treads. Player height follows this
   // ramp in Game.update(), while the visible treads make it read as stairs.
@@ -173,6 +175,7 @@ export function createFarmhouseInterior(scene, interactions) {
     window.castShadow = false;
   }
 
+  const groundSolidMeshes = solidMeshes.filter(mesh => mesh.userData.floorLevel !== 1);
   const floorHeightAt = (x, z, currentOffset = 0) => {
     if (x > 4.05 && x < 5.95 && z <= stairStartZ && z >= stairEndZ) {
       const t = THREE.MathUtils.clamp((stairStartZ - z) / run, 0, 1);
