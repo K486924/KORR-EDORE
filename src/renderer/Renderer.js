@@ -5,6 +5,7 @@ import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 import { InteractionSystem } from "../interaction/InteractionSystem.js?v=6";
+import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=1";
 
 export class Renderer {
   constructor(canvas) {
