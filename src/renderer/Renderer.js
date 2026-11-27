@@ -143,7 +143,21 @@ export class Renderer {
     box([0.42, wallH, 15.5], [-7.9, wallY, -6.25], plaster);
     box([0.42, wallH, 15.5], [7.9, wallY, -6.25], plaster);
     box([16.2, wallH, 0.42], [0, wallY, -14.0], plaster);
-    // Interior partitions: broad openings keep the central hall connected to each room.\n    const innerWall = plaster;\n    const iw = 0.16, ih = 3.05;\n    for (const x of [-2.05, 2.05]) {\n      for (const [z, length] of [[-12.0, 3.0], [-8.1, 3.1], [-3.0, 4.0]]) {\n        box([iw, ih, length], [x, 1.78, z], innerWall);\n      }\n    }\n    // Front bedroom/reception partition with two generous door openings.\n    for (const [x, length] of [[-5.3, 4.6], [0, 1.2], [5.3, 4.6]]) {\n      box([length, ih, iw], [x, 1.78, -4.65], innerWall);\n    }\n    // Ceiling is intentionally omitted in this first interior pass so the roofline and room layout remain readable.\n\n    // Upper floor band and a shallow, pitched roof.
+    // Interior partitions: broad openings keep the central hall connected to each room.
+    const innerWall = plaster;
+    const iw = 0.16, ih = 3.05;
+    for (const x of [-2.05, 2.05]) {
+      for (const [z, length] of [[-12.0, 3.0], [-8.1, 3.1], [-3.0, 4.0]]) {
+        box([iw, ih, length], [x, 1.78, z], innerWall);
+      }
+    }
+    // Front bedroom/reception partition with two generous door openings.
+    for (const [x, length] of [[-5.3, 4.6], [0, 1.2], [5.3, 4.6]]) {
+      box([length, ih, iw], [x, 1.78, -4.65], innerWall);
+    }
+    // Ceiling is intentionally omitted in this first interior pass so the roofline and room layout remain readable.
+
+    // Upper floor band and a shallow, pitched roof.
     box([16.25, 0.24, 15.8], [0, 3.68, -6.25], trim);
     const roofLeft = box([8.9, 0.34, 17.2], [-4.0, 4.25, -6.25], roofMat);
     roofLeft.rotation.z = -0.32;
@@ -282,7 +296,39 @@ export class Renderer {
     };
     [[-13,-5,1.15],[13,-8,1.25],[-15,8,1.1],[15,10,1.2],[-10,-22,1.4],[11,-24,1.35],[-20,2,1.5],[20,-2,1.45],[-8,18,1.1],[9,20,1.1]].forEach(p => makeTree(...p));
 
-    // Furnish the ground floor: living room, dining/kitchen, bedrooms and reception.\n    const rug = materials.fabric(0x8d7860);\n    box([4.0, 0.035, 3.1], [-5.0, 0.36, -9.1], rug, world, false);\n    // Living room sofa and cushions.\n    box([3.5, 0.62, 0.92], [-5.0, 0.72, -7.2], wood);\n    box([3.25, 0.72, 0.22], [-5.0, 1.12, -7.62], fabric);\n    for (const x of [-6.35, -5.45, -4.55, -3.65]) box([0.78, 0.42, 0.7], [x, 1.02, -7.12], paleFabric);\n    box([1.8, 0.28, 1.0], [-5.0, 0.52, -10.0], wood);\n    box([2.4, 0.18, 0.5], [-7.25, 0.42, -8.9], wood);\n    box([0.18, 1.15, 2.2], [-7.35, 0.85, -9.0], darkMetal);\n    // Dining table, six chairs and a simple kitchen island.\n    box([2.6, 0.16, 1.35], [5.0, 1.02, -9.7], wood);\n    for (const x of [4.0, 5.0, 6.0]) for (const z of [-8.7, -10.7]) {\n      box([0.72, 0.14, 0.72], [x, 0.68, z], wood);\n      box([0.72, 0.62, 0.12], [x, 1.0, z + (z < -9 ? -0.28 : 0.28)], fabric);\n    }\n    box([3.7, 0.88, 0.72], [5.1, 0.78, -5.9], paleFabric);\n    box([3.7, 0.1, 0.72], [5.1, 1.25, -5.9], wood);\n    for (const x of [3.6, 5.0, 6.4]) box([0.08, 0.55, 0.58], [x, 1.56, -5.9], trim);\n    // Uncle’s bedroom: double bed, bedside tables, wardrobe and writing desk.\n    box([3.3, 0.28, 2.35], [-5.0, 0.53, -1.45], wood);\n    box([3.1, 0.32, 2.12], [-5.0, 0.78, -1.45], paleFabric);\n    box([3.1, 0.28, 0.58], [-5.0, 1.02, -2.15], fabric);\n    for (const x of [-6.0, -4.0]) box([0.72, 0.78, 0.68], [x, 0.74, 0.25], wood);\n    box([1.65, 2.35, 0.72], [-7.0, 1.45, -2.0], wood);\n    box([1.8, 0.12, 0.85], [-3.0, 1.0, -0.6], wood);\n    box([0.62, 0.82, 0.62], [-3.0, 0.75, 0.25], fabric);\n    // Reception console and a few lived-in details.\n    box([2.8, 0.9, 0.62], [5.0, 0.82, -1.7], wood);\n    box([2.9, 0.1, 0.68], [5.0, 1.32, -1.7], paleFabric);\n    for (const x of [4.1, 5.0, 5.9]) box([0.42, 0.42, 0.42], [x, 1.58, -1.7], materials.plaster(0xc9bba4));\n\n    // Soft daylight and a little warm light inside the front rooms.
+    // Furnish the ground floor: living room, dining/kitchen, bedrooms and reception.
+    const rug = materials.fabric(0x8d7860);
+    box([4.0, 0.035, 3.1], [-5.0, 0.36, -9.1], rug, world, false);
+    // Living room sofa and cushions.
+    box([3.5, 0.62, 0.92], [-5.0, 0.72, -7.2], wood);
+    box([3.25, 0.72, 0.22], [-5.0, 1.12, -7.62], fabric);
+    for (const x of [-6.35, -5.45, -4.55, -3.65]) box([0.78, 0.42, 0.7], [x, 1.02, -7.12], paleFabric);
+    box([1.8, 0.28, 1.0], [-5.0, 0.52, -10.0], wood);
+    box([2.4, 0.18, 0.5], [-7.25, 0.42, -8.9], wood);
+    box([0.18, 1.15, 2.2], [-7.35, 0.85, -9.0], darkMetal);
+    // Dining table, six chairs and a simple kitchen island.
+    box([2.6, 0.16, 1.35], [5.0, 1.02, -9.7], wood);
+    for (const x of [4.0, 5.0, 6.0]) for (const z of [-8.7, -10.7]) {
+      box([0.72, 0.14, 0.72], [x, 0.68, z], wood);
+      box([0.72, 0.62, 0.12], [x, 1.0, z + (z < -9 ? -0.28 : 0.28)], fabric);
+    }
+    box([3.7, 0.88, 0.72], [5.1, 0.78, -5.9], paleFabric);
+    box([3.7, 0.1, 0.72], [5.1, 1.25, -5.9], wood);
+    for (const x of [3.6, 5.0, 6.4]) box([0.08, 0.55, 0.58], [x, 1.56, -5.9], trim);
+    // Uncle’s bedroom: double bed, bedside tables, wardrobe and writing desk.
+    box([3.3, 0.28, 2.35], [-5.0, 0.53, -1.45], wood);
+    box([3.1, 0.32, 2.12], [-5.0, 0.78, -1.45], paleFabric);
+    box([3.1, 0.28, 0.58], [-5.0, 1.02, -2.15], fabric);
+    for (const x of [-6.0, -4.0]) box([0.72, 0.78, 0.68], [x, 0.74, 0.25], wood);
+    box([1.65, 2.35, 0.72], [-7.0, 1.45, -2.0], wood);
+    box([1.8, 0.12, 0.85], [-3.0, 1.0, -0.6], wood);
+    box([0.62, 0.82, 0.62], [-3.0, 0.75, 0.25], fabric);
+    // Reception console and a few lived-in details.
+    box([2.8, 0.9, 0.62], [5.0, 0.82, -1.7], wood);
+    box([2.9, 0.1, 0.68], [5.0, 1.32, -1.7], paleFabric);
+    for (const x of [4.1, 5.0, 5.9]) box([0.42, 0.42, 0.42], [x, 1.58, -1.7], materials.plaster(0xc9bba4));
+
+    // Soft daylight and a little warm light inside the front rooms.
     this.scene.add(new THREE.HemisphereLight(0xe8f2ee, 0x65704f, 1.55));
     this.scene.add(new THREE.AmbientLight(0xffe7c6, 0.42));
     const sun = new THREE.DirectionalLight(0xffe5bd, 2.0);
@@ -473,7 +519,9 @@ export class Renderer {
     });
     geometries.forEach(geometry => geometry.dispose());
     materials.forEach(material => material.dispose());
-    textures.forEach(texture => texture.dispose());\n    this.materialLibrary?.dispose();\n    this.materialLibrary = null;
+    textures.forEach(texture => texture.dispose());
+    this.materialLibrary?.dispose();
+    this.materialLibrary = null;
     this.scene.remove(this.levelRoot);
     this.levelRoot = null;
 
