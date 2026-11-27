@@ -157,13 +157,26 @@ export class Renderer {
     }
     // Ceiling is intentionally omitted in this first interior pass so the roofline and room layout remain readable.
 
-    // Upper floor band and a shallow, pitched roof.
+    // Upper storey: the tall central block from the architectural sketches.
     box([16.25, 0.24, 15.8], [0, 3.68, -6.25], trim);
-    const roofLeft = box([8.9, 0.34, 17.2], [-4.0, 4.25, -6.25], roofMat);
-    roofLeft.rotation.z = -0.32;
-    const roofRight = box([8.9, 0.34, 17.2], [4.0, 4.25, -6.25], roofMat);
-    roofRight.rotation.z = 0.32;
-    box([0.42, 0.5, 17.4], [0, 5.0, -6.25], roofMat);
+    const upperY = 5.05, upperH = 2.55;
+    box([15.8, upperH, 0.38], [0, upperY, 1.42], plaster);
+    box([15.8, upperH, 0.38], [0, upperY, -13.92], plaster);
+    box([0.38, upperH, 15.3], [-7.9, upperY, -6.25], plaster);
+    box([0.38, upperH, 15.3], [7.9, upperY, -6.25], plaster);
+    // Upper front windows and a shallow central balcony door.
+    for (const x of [-5.0, -3.0, 3.0, 5.0]) {
+      box([1.18, 1.35, 0.10], [x, 5.25, 1.18], trim, world, false);
+      box([0.96, 1.12, 0.06], [x, 5.25, 1.10], glass, world, false);
+      box([0.06, 1.12, 0.06], [x, 5.25, 1.06], wood, world, false);
+      box([0.96, 0.06, 0.06], [x, 5.25, 1.06], wood, world, false);
+    }
+    // Main pitched roof, lifted above the upper storey.
+    const roofLeft = box([9.1, 0.42, 17.6], [-3.95, 7.0, -6.25], roofMat);
+    roofLeft.rotation.z = -0.34;
+    const roofRight = box([9.1, 0.42, 17.6], [3.95, 7.0, -6.25], roofMat);
+    roofRight.rotation.z = 0.34;
+    box([0.48, 0.58, 17.8], [0, 8.35, -6.25], roofMat);
 
     // Front porch, open double doors and welcoming windows.
     box([5.2, 0.22, 2.4], [0, 0.32, 2.55], foundation);
@@ -268,6 +281,110 @@ export class Renderer {
     car.rotation.y = 0.08;
     world.add(car);
     this.arrivalCar = car;
+
+    // Two lower side wings from the player's farmhouse sketches.
+    for (const side of [-1, 1]) {
+      const cx = side * 10.35;
+      box([5.0, 0.28, 15.0], [cx, 0.18, -6.2], foundation);
+      box([4.9, 2.95, 0.30], [cx, 1.72, 1.25], plaster);
+      box([4.9, 2.95, 0.30], [cx, 1.72, -13.55], plaster);
+      box([0.30, 2.95, 14.8], [side * 12.8, 1.72, -6.2], plaster);
+      // Recessed wing windows, timber frames and warm interior glazing.
+      for (const z of [-10.8, -6.2, -1.6]) {
+        box([0.10, 1.15, 1.35], [side * 12.63, 1.9, z], trim, world, false);
+        box([0.06, 0.94, 1.12], [side * 12.57, 1.9, z], glass, world, false);
+        box([0.06, 0.94, 0.055], [side * 12.52, 1.9, z], wood, world, false);
+        box([0.06, 0.055, 1.12], [side * 12.52, 1.9, z], wood, world, false);
+      }
+      // Separate lower pitched roof on each wing.
+      const wingRoofA = box([3.0, 0.32, 15.8], [cx - side * 1.25, 3.45, -6.2], roofMat);
+      wingRoofA.rotation.z = side * 0.38;
+      const wingRoofB = box([3.0, 0.32, 15.8], [cx + side * 1.25, 3.45, -6.2], roofMat);
+      wingRoofB.rotation.z = -side * 0.38;
+      box([0.18, 0.34, 15.9], [cx, 4.02, -6.2], roofMat);
+      // Covered side veranda posts and a simple timber fascia.
+      for (const z of [-12.4, -8.3, -4.1, 0.0]) {
+        box([0.18, 2.7, 0.18], [side * 13.0, 1.42, z], wood);
+      }
+    }
+
+    // Small detached generator room, with a metal service door and ventilation.
+    const genX = -15.7, genZ = -2.8;
+    box([4.0, 0.22, 4.8], [genX, 0.02, genZ], foundation);
+    box([3.8, 2.65, 0.22], [genX, 1.35, genZ + 2.3], plaster);
+    box([3.8, 2.65, 0.22], [genX, 1.35, genZ - 2.3], plaster);
+    box([0.22, 2.65, 4.4], [genX - 1.9, 1.35, genZ], plaster);
+    box([0.22, 2.65, 4.4], [genX + 1.9, 1.35, genZ], plaster);
+    box([4.35, 0.22, 5.15], [genX, 2.75, genZ], roofMat);
+    box([1.05, 2.15, 0.10], [genX + 0.9, 1.1, genZ + 2.43], darkMetal);
+    box([0.12, 0.12, 0.08], [genX + 0.48, 1.1, genZ + 2.50], trim, world, false);
+    for (let i = 0; i < 5; i++) box([0.08, 0.52, 0.08], [genX - 1.05 + i * 0.18, 2.0, genZ + 2.44], darkMetal, world, false);
+    // Generator unit, exhaust and fuel can visible through the service-side opening.
+    box([1.15, 0.82, 0.72], [genX - 0.35, 0.58, genZ - 0.15], darkMetal);
+    box([0.52, 0.12, 0.48], [genX - 0.35, 1.05, genZ - 0.15], wood);
+    cylinder(0.07, 0.07, 0.72, [genX - 0.8, 1.65, genZ - 0.75], darkMetal, 8);
+
+    // Perimeter fencing: timber posts and rails, with the existing double gate as the entrance.
+    const fenceWood = materials.darkWood(0x493a2a);
+    const fenceMetal = materials.metal(0x333a35, 0.68);
+    const fencePost = (x, z) => {
+      box([0.18, 1.65, 0.18], [x, 0.82, z], fenceWood);
+      box([0.24, 0.10, 0.24], [x, 1.68, z], trim, world, false);
+    };
+    for (let z = -24; z <= 8; z += 2.2) {
+      fencePost(-19, z); fencePost(19, z);
+      box([0.10, 0.12, 2.2], [-19, 0.55, z + 1.1], fenceMetal);
+      box([0.10, 0.12, 2.2], [19, 0.55, z + 1.1], fenceMetal);
+      for (let y = 0.28; y <= 1.35; y += 0.27) {
+        box([0.08, 0.045, 2.2], [-19, y, z + 1.1], fenceWood, world, false);
+        box([0.08, 0.045, 2.2], [19, y, z + 1.1], fenceWood, world, false);
+      }
+    }
+    for (let x = -19; x <= 19; x += 2.2) {
+      if (Math.abs(x) < 4.0) continue;
+      fencePost(x, 8.4);
+      box([2.2, 0.12, 0.10], [x + 1.1, 0.55, 8.4], fenceMetal);
+      for (let y = 0.28; y <= 1.35; y += 0.27) box([2.2, 0.045, 0.08], [x + 1.1, y, 8.4], fenceWood, world, false);
+    }
+    for (let x = -19; x <= 19; x += 2.2) {
+      fencePost(x, -24);
+      box([2.2, 0.12, 0.10], [x + 1.1, 0.55, -24], fenceMetal);
+      for (let y = 0.28; y <= 1.35; y += 0.27) box([2.2, 0.045, 0.08], [x + 1.1, y, -24], fenceWood, world, false);
+    }
+
+    // Sun, moon, stars and slow cloud banks for a natural day-to-night cycle.
+    this.skyCycle = { sun: null, moon: null, stars: null, dayLight: null, hemi: null, phase: 0 };
+    const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(1.45, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffe4a6 }));
+    sunDisc.position.set(-28, 34, -48); world.add(sunDisc);
+    const moonDisc = new THREE.Mesh(new THREE.SphereGeometry(1.05, 16, 12), new THREE.MeshBasicMaterial({ color: 0xe1e8ee }));
+    moonDisc.position.set(28, -20, -48); world.add(moonDisc);
+    const starPositions = [];
+    for (let i = 0; i < 180; i++) {
+      const a = Math.random() * Math.PI * 2, r = 48 + Math.random() * 28;
+      starPositions.push(Math.cos(a) * r, 18 + Math.random() * 48, Math.sin(a) * r - 42);
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xe8e4d8, size: 0.32, transparent: true, opacity: 0 });
+    const stars = new THREE.Points(starGeo, starMat); world.add(stars);
+    const cloudMat = new THREE.MeshStandardMaterial({ color: 0xd8ddd8, roughness: 1, transparent: true, opacity: 0.72 });
+    this.clouds = [];
+    for (let i = 0; i < 7; i++) {
+      const cloud = new THREE.Group();
+      for (let j = 0; j < 4; j++) {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(1.4 + (j % 2) * 0.35, 10, 8), cloudMat);
+        puff.position.set((j - 1.5) * 1.65, Math.sin(j) * 0.18, 0);
+        puff.scale.y = 0.35; cloud.add(puff);
+      }
+      cloud.position.set(-42 + i * 14, 25 + (i % 3) * 2, -35 - (i % 2) * 22);
+      this.clouds.push(cloud); world.add(cloud);
+    }
+    const cycleHemi = new THREE.HemisphereLight(0xe8f2ee, 0x65704f, 1.55);
+    this.scene.add(cycleHemi);
+    const cycleSun = new THREE.DirectionalLight(0xffe5bd, 2.0);
+    cycleSun.position.set(-18, 28, 16); cycleSun.castShadow = false; this.scene.add(cycleSun);
+    this.skyCycle.sun = sunDisc; this.skyCycle.moon = moonDisc;
+    this.skyCycle.stars = stars; this.skyCycle.dayLight = cycleSun; this.skyCycle.hemi = cycleHemi;
 
     // Garden beds, low hedges, lanterns and mature trees around the property.
     for (const side of [-1, 1]) {
@@ -536,6 +653,22 @@ export class Renderer {
   update(deltaSeconds = 0) {
     const dt = Math.max(0, Math.min(deltaSeconds, 0.05));
     this.elapsed += dt;
+    if (this.skyCycle) {
+      const phase = (this.elapsed / 240) * Math.PI * 2 - Math.PI / 2;
+      const daylight = Math.max(0, Math.sin(phase) * 0.5 + 0.5);
+      const night = 1 - daylight;
+      const orbit = phase;
+      this.skyCycle.sun.position.set(Math.cos(orbit) * 42, Math.sin(orbit) * 38, -48);
+      this.skyCycle.moon.position.set(-Math.cos(orbit) * 42, -Math.sin(orbit) * 38, -48);
+      this.skyCycle.sun.visible = daylight > 0.08;
+      this.skyCycle.moon.visible = night > 0.12;
+      this.skyCycle.stars.material.opacity = Math.pow(night, 1.7) * 0.9;
+      this.skyCycle.dayLight.intensity = 0.12 + daylight * 2.0;
+      this.skyCycle.hemi.intensity = 0.18 + daylight * 1.45;
+      this.scene.background.setRGB(0.008 + daylight * 0.76, 0.012 + daylight * 0.82, 0.025 + daylight * 0.78);
+      if (this.scene.fog?.color) this.scene.fog.color.copy(this.scene.background);
+      if (this.clouds) this.clouds.forEach((cloud, i) => { cloud.position.x += dt * (0.18 + i * 0.012); if (cloud.position.x > 55) cloud.position.x = -55; });
+    }
     if (this.gateLeaves) {
       const gateAlpha = 1 - Math.exp(-dt * 2.4);
       this.gateOpenAmount += (this.gateTargetOpen - this.gateOpenAmount) * gateAlpha;
