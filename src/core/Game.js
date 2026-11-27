@@ -225,13 +225,17 @@ export class Game {
   }
 
   showGameToast(message) {
-    const status = document.querySelector("#boot-status");
-    if (status) {
-      status.textContent = message;
-      status.style.opacity = "1";
-      window.clearTimeout(this.toastTimer);
-      this.toastTimer = window.setTimeout(() => { status.style.opacity = ""; }, 2600);
+    let toast = document.querySelector("#game-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "game-toast";
+      toast.style.cssText = "position:fixed;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:50;max-width:88vw;padding:11px 16px;border:1px solid #c5ad7a88;border-radius:12px;background:#101713eF;color:#f0e6ce;font:600 12px/1.45 system-ui,sans-serif;letter-spacing:.03em;text-align:center;box-shadow:0 8px 28px #0009;pointer-events:none;opacity:0;transition:opacity .18s";
+      document.body.appendChild(toast);
     }
+    toast.textContent = message;
+    toast.style.opacity = "1";
+    window.clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => { toast.style.opacity = "0"; }, 2600);
   }
 
   isNearGate() {
