@@ -207,6 +207,9 @@ export class Renderer {
       box([0.92, 0.22, 0.92], [x, 2.88, 8.4], trim);
       box([0.55, 0.18, 0.55], [x, 3.08, 8.4], stone);
     }
+    this.gateLeaves = [];
+    this.gateOpenAmount = 0;
+    this.gateTargetOpen = 0;
     for (const side of [-1, 1]) {
       const gate = new THREE.Group();
       gate.position.set(side * 3.15, 0.18, 8.4);
@@ -219,6 +222,7 @@ export class Renderer {
         box([0.055, 1.55, 0.07], [-side * (i * 0.25), 1.17, 0], darkMetal, gate);
       }
       world.add(gate);
+      this.gateLeaves.push({ group: gate, side });
     }
 
     // A parked family saloon, ready for the arrival sequence to be added.
@@ -421,6 +425,11 @@ export class Renderer {
     this.flashlight.visible = this.flashlightEnabled;
   }
 
+  toggleGate() {
+    this.gateTargetOpen = this.gateTargetOpen > 0.5 ? 0 : 1;
+    return this.gateTargetOpen > 0.5;
+  }
+
   setFlashlightEnabled(enabled) {
     this.flashlightEnabled = Boolean(enabled);
     this.flashlight.visible = this.flashlightEnabled;
@@ -465,6 +474,13 @@ export class Renderer {
   update(deltaSeconds = 0) {
     const dt = Math.max(0, Math.min(deltaSeconds, 0.05));
     this.elapsed += dt;
+    if (this.gateLeaves) {
+      const gateAlpha = 1 - Math.exp(-dt * 2.4);
+      this.gateOpenAmount += (this.gateTargetOpen - this.gateOpenAmount) * gateAlpha;
+      for (const leaf of this.gateLeaves) {
+        leaf.group.rotation.y = leaf.side * this.gateOpenAmount * 1.08;
+      }
+    }
     if (!this.flashlight) return;
 
     this.noisePhase += dt;
