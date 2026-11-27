@@ -54,13 +54,8 @@ export class PlayerAvatar {
   }
 
   dispose() {
-    this.root.traverse(object => {
-      if (object.isMesh) {
-        object.geometry?.dispose();
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach(material => material?.dispose());
-      }
-    });
+    // Geometry and materials are shared by SkeletonUtils clones. Remove this
+    // instance only; disposing shared resources would break other avatars.
     this.root.removeFromParent();
   }
 }
