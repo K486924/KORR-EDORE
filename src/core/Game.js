@@ -166,20 +166,22 @@ export class Game {
       this.carSpeed = 0;
       return;
     }
-    if (this.isNearCar()) {
+    const target = this.renderer.interactions.update();
+    if (!target) return;
+    if (target.id === "arrival-car") {
       this.inVehicle = true;
       this.carSpeed = 0;
       this.yaw = this.renderer.arrivalCar.rotation.y;
       this.pitch = -0.22;
       return;
     }
-    if (this.isNearGeneratorKey()) {
+    if (target.id === "generator-key") {
       this.hasGeneratorKey = true;
       this.renderer.setGeneratorKeyCollected(true);
       this.showGameToast("Brass key collected. It fits the generator room padlock.");
       return;
     }
-    if (this.isNearGeneratorDoor()) {
+    if (target.id === "generator-door") {
       if (!this.hasGeneratorKey) {
         this.showGameToast("Locked. Find the brass key in the uncle's bedroom.");
       } else {
@@ -188,7 +190,9 @@ export class Game {
       }
       return;
     }
-    if (this.isNearGate()) this.syncGateButton(this.renderer.toggleGate());
+    if (target.id.startsWith("farmhouse-gate-")) {
+      this.syncGateButton(this.renderer.toggleGate());
+    }
   }
 
   updateVehicle(delta) {
@@ -259,25 +263,17 @@ export class Game {
       button.setAttribute("aria-label", "Exit vehicle");
       return;
     }
-    const carNearby = this.isNearCar();
-    const gateNearby = this.isNearGate();
-    const keyNearby = this.isNearGeneratorKey();
-    const generatorNearby = this.isNearGeneratorDoor();
-    button.hidden = !carNearby && !gateNearby && !keyNearby && !generatorNearby;
-    if (carNearby) {
-      button.textContent = "ENTER VEHICLE · E";
-      button.setAttribute("aria-label", "Enter the car");
-    } else if (keyNearby) {
-      button.textContent = "TAKE BRASS KEY · E";
-      button.setAttribute("aria-label", "Take the generator room key");
-    } else if (generatorNearby) {
-      button.textContent = this.hasGeneratorKey ? "OPEN GENERATOR ROOM · E" : "LOCKED · FIND KEY";
-      button.setAttribute("aria-label", "Generator room door");
-    } else if (gateNearby) {
-      const open = this.renderer.gateTargetOpen > 0.5;
-      button.textContent = open ? "CLOSE GATE · E" : "OPEN GATE · E";
-      button.setAttribute("aria-label", open ? "Close farmhouse gate" : "Open farmhouse gate");
+    const target = this.renderer.interactions.update();
+    button.hidden = !target;
+    if (!target) return;
+    let label = target.label;
+    if (target.id === "generator-door") {
+      label = this.hasGeneratorKey ? (this.renderer.generatorDoorOpen ? "CLOSE GENERATOR ROOM · E" : "UNLOCK GENERATOR ROOM · E") : "LOCKED · FIND KEY";
+    } else if (target.id.startsWith("farmhouse-gate-")) {
+      label = this.renderer.gateTargetOpen > 0.5 ? "CLOSE GATE · E" : "OPEN GATE · E";
     }
+    button.textContent = label + (label.includes("LOCKED") ? "" : "");
+    button.setAttribute("aria-label", label);
   }
 
   syncGateButton(open) {
