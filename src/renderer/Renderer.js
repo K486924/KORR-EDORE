@@ -638,6 +638,8 @@ export class Renderer {
       mesh.userData.collisionEnabled = !upstairs;
     for (const mesh of this.interiorLevel.upperSolidMeshes)
       mesh.userData.collisionEnabled = upstairs;
+    for (const mesh of this.interiorLevel.stairSolidMeshes)
+      mesh.userData.collisionEnabled = true;
   }
 
   disposeInteriorLevel() {
