@@ -197,9 +197,13 @@ export class Game {
   updateInteractionUI() {
     const button = document.querySelector("#interact-button");
     if (!button) return;
-    const nearby = this.isNearGate();
-    button.hidden = !nearby;
-    if (nearby) {
+    const carNearby = this.isNearCar();
+    const gateNearby = this.isNearGate();
+    button.hidden = !carNearby && !gateNearby;
+    if (carNearby) {
+      button.textContent = "ENTER VEHICLE · E";
+      button.setAttribute("aria-label", "Enter the car");
+    } else if (gateNearby) {
       const open = this.renderer.gateTargetOpen > 0.5;
       button.textContent = open ? "CLOSE GATE · E" : "OPEN GATE · E";
       button.setAttribute("aria-label", open ? "Close farmhouse gate" : "Open farmhouse gate");
