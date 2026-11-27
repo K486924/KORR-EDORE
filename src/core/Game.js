@@ -1,4 +1,4 @@
-import { Renderer } from "../renderer/Renderer.js?build=5";
+import { Renderer } from "../renderer/Renderer.js?build=6";
 import { moveWithCollisions } from "../player/collision.js";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
@@ -133,7 +133,7 @@ export class Game {
     const startZ = camera.position.z;
     const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
     const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
-    moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells());
+    moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
 
     const actualX = camera.position.x - startX;
     const actualZ = camera.position.z - startZ;
@@ -172,6 +172,11 @@ export class Game {
     }
     const target = this.renderer.interactions.update();
     if (!target) return;
+    if (target.id.startsWith("house-door-")) {
+      const open = this.renderer.toggleHouseDoor(target.id);
+      this.showGameToast(open ? "Front door opened." : "Front door closed.");
+      return;
+    }
     if (target.id === "arrival-car") {
       this.inVehicle = true;
       const hud = document.querySelector("#vehicle-hud");
@@ -332,7 +337,14 @@ export class Game {
     button.hidden = !target;
     if (!target) return;
     let label = target.label;
-    if (target.id === "generator-door") {
+    if (target.id.startsWith("house-door-")) {
+      const door = this.renderer.houseDoors.find(item => item.id === target.id);
+      label = door?.open ? "CLOSE FRONT DOOR · E" : "OPEN FRONT DOOR · E";
+    } else if (target.id.startsWith("car-tire-")) {
+      label = "REPLACE DAMAGED TYRE · E";
+    } else if (target.id.startsWith("spare-tire-")) {
+      label = "PICK UP SPARE TYRE · E";
+    } else if (target.id === "generator-door") {
       label = this.hasGeneratorKey ? (this.renderer.generatorDoorOpen ? "CLOSE GENERATOR ROOM · E" : "UNLOCK GENERATOR ROOM · E") : "LOCKED · FIND KEY";
     } else if (target.id.startsWith("farmhouse-gate-")) {
       label = this.renderer.gateTargetOpen > 0.5 ? "CLOSE GATE · E" : "OPEN GATE · E";
