@@ -270,13 +270,19 @@ export class Renderer {
     box([1.0, 0.055, 1.45], [0, 1.85, -0.2], carPaint, car, false);
     box([1.82, 0.12, 0.12], [0, 0.98, -2.04], trim, car, false);
     this.carWheels = [];
+    this.carTireStates = [];
     for (const x of [-0.83, 0.83]) {
       for (const z of [-1.35, 1.35]) {
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.2, 16), tyre);
-        wheel.rotation.z = Math.PI / 2;
+        const wheel = new THREE.Group();
         wheel.position.set(x, 0.48, z);
+        const tireMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.2, 20), tyre);
+        tireMesh.rotation.z = Math.PI / 2;
+        wheel.add(tireMesh);
         car.add(wheel);
+        const state = { mesh: wheel, tireMesh, health: 1, blown: false, label: (z < 0 ? "Front" : "Rear") + (x < 0 ? " left" : " right") };
         this.carWheels.push(wheel);
+        this.carTireStates.push(state);
+        this.interactions.register(tireMesh, { id: "car-tire-" + this.carTireStates.length, label: "CHECK " + state.label.toUpperCase() + " TYRE", maxDistance: 3.2, enabled: () => state.blown });
       }
       box([0.18, 0.22, 0.12], [x, 0.9, -2.08], mat(0xf3d9a2, 0.4, { emissive: 0x9b7138, emissiveIntensity: 0.2 }), car, false);
     }
@@ -285,6 +291,24 @@ export class Renderer {
     world.add(car);
     this.arrivalCar = car;
     this.interactions.register(car, { id: "arrival-car", label: "ENTER VEHICLE", maxDistance: 4.2 });
+
+    // Spare tyre pickups around the driveway; one can be carried at a time.
+    this.spareTirePickups = [];
+    for (const [index, position] of [[-8.5, 14.5], [8.5, 14.5], [-15, 4]].entries()) {
+      const pickup = new THREE.Group();
+      const rubber = mat(0x111412, 0.96);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.105, 10, 22), rubber);
+      ring.rotation.y = Math.PI / 2;
+      pickup.add(ring);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 12), chrome);
+      hub.rotation.z = Math.PI / 2;
+      pickup.add(hub);
+      pickup.position.set(position[0], 0.42, position[1]);
+      world.add(pickup);
+      const item = { mesh: pickup, collected: false };
+      this.spareTirePickups.push(item);
+      this.interactions.register(pickup, { id: "spare-tire-" + index, label: "PICK UP SPARE TYRE", maxDistance: 2.8, enabled: () => !item.collected });
+    }
 
     // Two lower side wings from the player's farmhouse sketches.
     for (const side of [-1, 1]) {
