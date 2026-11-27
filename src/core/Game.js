@@ -176,7 +176,7 @@ export class Game {
       (this.keys.has("a") || this.keys.has("arrowleft") || this.move.x < 0 ? 1 : 0);
     const target = throttle * 7.5;
     this.carSpeed += (target - this.carSpeed) * Math.min(1, delta * (throttle ? 1.8 : 2.8));
-    this.yaw += steering * Math.sign(this.carSpeed || 1) * Math.min(1, Math.abs(this.carSpeed) / 4) * delta * 0.72;
+    this.yaw -= steering * Math.sign(this.carSpeed || 1) * Math.min(1, Math.abs(this.carSpeed) / 4) * delta * 0.72;
     car.rotation.y = this.yaw;
     car.position.x -= Math.sin(this.yaw) * this.carSpeed * delta;
     car.position.z -= Math.cos(this.yaw) * this.carSpeed * delta;
