@@ -12,55 +12,77 @@ function resolveAxis(position, radius, axis, extraSolidCells = null) {
   const otherOrigin = otherAxis === "x" ? GRID.originX : GRID.originZ;
   const index = cellIndex(position[axis], origin);
   const otherIndex = cellIndex(position[otherAxis], otherOrigin);
-
-  // A circle this small can only overlap cells in this local 3x3 neighborhood.
   for (let a = index - 1; a <= index + 1; a++) {
     for (let b = otherIndex - 1; b <= otherIndex + 1; b++) {
       const xIndex = axis === "x" ? a : b;
       const zIndex = axis === "z" ? a : b;
       const key = `${xIndex},${zIndex}`;
       if (!SOLID_CELL_KEYS.has(key) && !extraSolidCells?.has(key)) continue;
-
       const boxX = GRID.originX + xIndex * GRID.cellSize + HALF_CELL;
       const boxZ = GRID.originZ + zIndex * GRID.cellSize + HALF_CELL;
       const closestX = Math.max(boxX - HALF_CELL, Math.min(position.x, boxX + HALF_CELL));
       const closestZ = Math.max(boxZ - HALF_CELL, Math.min(position.z, boxZ + HALF_CELL));
-      const dx = position.x - closestX;
-      const dz = position.z - closestZ;
-      const distanceSquared = dx * dx + dz * dz;
-      if (distanceSquared >= radius * radius) continue;
-
+      const dx = position.x - closestX, dz = position.z - closestZ;
+      if (dx * dx + dz * dz >= radius * radius) continue;
       if (axis === "x") {
-        const requiredX = Math.sqrt(Math.max(0, radius * radius - dz * dz));
-        if (Math.abs(dx) > 1e-8) {
-          position.x = closestX + Math.sign(dx) * requiredX;
-        } else {
-          const left = Math.abs(position.x - (boxX - HALF_CELL));
-          const right = Math.abs((boxX + HALF_CELL) - position.x);
-          position.x = left < right
-            ? boxX - HALF_CELL - requiredX
-            : boxX + HALF_CELL + requiredX;
-        }
+        const required = Math.sqrt(Math.max(0, radius * radius - dz * dz));
+        position.x = Math.abs(dx) > 1e-8 ? closestX + Math.sign(dx) * required :
+          (Math.abs(position.x - (boxX - HALF_CELL)) < Math.abs((boxX + HALF_CELL) - position.x)
+            ? boxX - HALF_CELL - required : boxX + HALF_CELL + required);
       } else {
-        const requiredZ = Math.sqrt(Math.max(0, radius * radius - dx * dx));
-        if (Math.abs(dz) > 1e-8) {
-          position.z = closestZ + Math.sign(dz) * requiredZ;
-        } else {
-          const near = Math.abs(position.z - (boxZ - HALF_CELL));
-          const far = Math.abs((boxZ + HALF_CELL) - position.z);
-          position.z = near < far
-            ? boxZ - HALF_CELL - requiredZ
-            : boxZ + HALF_CELL + requiredZ;
-        }
+        const required = Math.sqrt(Math.max(0, radius * radius - dx * dx));
+        position.z = Math.abs(dz) > 1e-8 ? closestZ + Math.sign(dz) * required :
+          (Math.abs(position.z - (boxZ - HALF_CELL)) < Math.abs((boxZ + HALF_CELL) - position.z)
+            ? boxZ - HALF_CELL - required : boxZ + HALF_CELL + required);
       }
     }
   }
 }
 
-export function moveWithCollisions(position, deltaX, deltaZ, radius, extraSolidCells = null) {
+function resolveMeshCollisions(position, radius, meshes) {
+  if (!meshes?.length) return;
+  const center = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const local = new THREE.Vector3();
+  const closest = new THREE.Vector3();
+  for (let pass = 0; pass < 3; pass++) {
+    for (const mesh of meshes) {
+      if (!mesh?.visible || mesh.userData?.collisionEnabled === false) continue;
+      mesh.updateWorldMatrix(true, false);
+      mesh.getWorldPosition(center);
+      mesh.getWorldQuaternion(quaternion);
+      const sx = mesh.scale.x, sz = mesh.scale.z;
+      const halfX = (mesh.geometry?.parameters?.width || 0.2) * Math.abs(sx) * 0.5;
+      const halfZ = (mesh.geometry?.parameters?.depth || 0.2) * Math.abs(sz) * 0.5;
+      local.set(position.x - center.x, 0, position.z - center.z).applyQuaternion(quaternion.clone().invert());
+      closest.set(Math.max(-halfX, Math.min(local.x, halfX)), 0,
+        Math.max(-halfZ, Math.min(local.z, halfZ)));
+      const dx = local.x - closest.x, dz = local.z - closest.z;
+      const distanceSq = dx * dx + dz * dz;
+      if (distanceSq >= radius * radius) continue;
+      let nx = dx, nz = dz;
+      let distance = Math.sqrt(distanceSq);
+      if (distance < 1e-7) {
+        const px = halfX - Math.abs(local.x), pz = halfZ - Math.abs(local.z);
+        if (px < pz) { nx = local.x >= 0 ? 1 : -1; nz = 0; distance = -px; }
+        else { nx = 0; nz = local.z >= 0 ? 1 : -1; distance = -pz; }
+      }
+      const push = radius - distance;
+      local.x += nx / Math.max(1e-7, Math.hypot(nx, nz)) * push;
+      local.z += nz / Math.max(1e-7, Math.hypot(nx, nz)) * push;
+      const corrected = new THREE.Vector3(local.x, 0, local.z).applyQuaternion(quaternion).add(center);
+      position.x = corrected.x;
+      position.z = corrected.z;
+    }
+  }
+}
+
+export function moveWithCollisions(position, deltaX, deltaZ, radius, extraSolidCells = null, solidMeshes = null) {
   position.x += deltaX;
   resolveAxis(position, radius, "x", extraSolidCells);
+  resolveMeshCollisions(position, radius, solidMeshes);
   position.z += deltaZ;
   resolveAxis(position, radius, "z", extraSolidCells);
+  resolveMeshCollisions(position, radius, solidMeshes);
   return position;
 }
