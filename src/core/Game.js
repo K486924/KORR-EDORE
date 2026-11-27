@@ -121,7 +121,7 @@ export class Game {
     const startZ = camera.position.z;
     const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
     const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
-    moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius);
+    moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells());
 
     const actualX = camera.position.x - startX;
     const actualZ = camera.position.z - startZ;
