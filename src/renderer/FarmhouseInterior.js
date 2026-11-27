@@ -182,6 +182,11 @@ export function createFarmhouseInterior(scene, interactions) {
     const plate = box([0.16, 0.30, 0.045], [-side * 0.625, 1.35, side * 0.13], brass, hinge);
     const lock = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.018, 8, 14), brass);
     lock.position.set(-side * 0.625, 1.28, side * 0.17); hinge.add(lock);
+    if (side === -1) {
+      const secondLock = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.018, 8, 14), brass);
+      secondLock.position.set(-side * 0.625, 1.78, side * 0.17);
+      hinge.add(secondLock);
+    }
     ritualDoorHinges.push({ hinge, side, leaf });
     interactions.register(leaf, { id: "ritual-room-door", label: "THREE LOCKS · FIND THE KEYS", maxDistance: 3.0 });
   }
