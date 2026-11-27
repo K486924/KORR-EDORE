@@ -126,7 +126,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
     }
 
     // Swings outward away from cabin (side = -1 left swings -Y, side = +1 right swings +Y)
-    const doorPart = { pivot, open: false, angle: 0, maxAngle: side * -1.05, winGlass, winDown: false, label };
+    const doorPart = { pivot, open: false, angle: 0, maxAngle: side * 1.05, winGlass, winDown: false, label };
     parts[name] = doorPart;
 
     aimTargets.push({
