@@ -586,6 +586,7 @@ export class Renderer {
     this.indoorTargets = this.interactions.targets.slice(this.outdoorTargets.length);
     this.interactions.targets = this.outdoorTargets;
     this.activeLevel = "outdoor";
+    this.currentInteriorFloorOffset = 0;
   }
 
   enterInterior() {
@@ -596,6 +597,7 @@ export class Renderer {
     this.interactions.current = null;
     this.solidMeshes = this.indoorSolidMeshes;
     this.activeLevel = "interior";
+    this.currentInteriorFloorOffset = 0;
     this.camera.position.set(0, 1.62, 0.25);
     this.camera.rotation.set(0, 0, 0, "YXZ");
     return true;
@@ -609,6 +611,7 @@ export class Renderer {
     this.interactions.current = null;
     this.solidMeshes = this.outdoorSolidMeshes;
     this.activeLevel = "outdoor";
+    this.currentInteriorFloorOffset = 0;
     this.camera.position.set(0, 1.62, 3.55);
     this.camera.rotation.set(0, 0, 0, "YXZ");
     return true;
@@ -622,9 +625,9 @@ export class Renderer {
   }
 
   getFloorOffsetAt(x, z) {
-    return this.activeLevel === "interior"
-      ? this.interiorLevel.floorHeightAt(x, z)
-      : 0;
+    if (this.activeLevel !== "interior") return 0;
+    this.currentInteriorFloorOffset = this.interiorLevel.floorHeightAt(x, z, this.currentInteriorFloorOffset);
+    return this.currentInteriorFloorOffset;
   }
 
   disposeInteriorLevel() {
