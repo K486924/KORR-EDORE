@@ -404,6 +404,7 @@ export class Renderer {
     this.camera.add(this.flashlightTarget);
     this.beamDirection.copy(this.camera.getWorldDirection(new THREE.Vector3()));
     this.flashlight.visible = this.flashlightEnabled;
+    this.viewModel.visible = this.flashlightEnabled;
   }
 
   toggleGate() {
@@ -418,6 +419,7 @@ export class Renderer {
   setFlashlightEnabled(enabled) {
     this.flashlightEnabled = Boolean(enabled);
     this.flashlight.visible = this.flashlightEnabled;
+    this.viewModel.visible = this.flashlightEnabled;
     return this.flashlightEnabled;
   }
 
