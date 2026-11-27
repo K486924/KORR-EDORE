@@ -65,3 +65,23 @@ body { background: #080a0b; }
   background: #35352bcf;
 }
 #flashlight-toggle:active { transform: scale(.97); }
+
+
+#interact-button {
+  position: fixed;
+  left: 50%;
+  bottom: max(26px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid #e2d3ae99;
+  border-radius: 14px;
+  color: #fff4d9;
+  background: #26362edb;
+  box-shadow: 0 8px 24px #17201655;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .1em;
+  touch-action: manipulation;
+}
+#interact-button:active { transform: translateX(-50%) scale(.97); }
