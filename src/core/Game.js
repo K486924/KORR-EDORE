@@ -174,7 +174,9 @@ export class Game {
     const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
     const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
     moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
-    camera.position.y = 1.62 + this.renderer.getFloorOffsetAt(camera.position.x, camera.position.z);
+    const floorOffset = this.renderer.getFloorOffsetAt(camera.position.x, camera.position.z);
+    camera.position.y = 1.62 + floorOffset;
+    this.renderer.setInteriorFloorLevel(floorOffset);
 
     const actualX = camera.position.x - startX;
     const actualZ = camera.position.z - startZ;
