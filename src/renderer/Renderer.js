@@ -87,6 +87,7 @@ export class Renderer {
     this.scene.add(this.levelRoot);
     const world = this.levelRoot;
     const materials = createMaterialLibrary();
+    this.materialLibrary = materials;
 
     // A bright, quiet afternoon. The house should feel like somewhere people
     // would genuinely want to spend a weekend.
@@ -223,7 +224,7 @@ export class Renderer {
         const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.2, 16), tyre);
         wheel.rotation.z = Math.PI / 2;
         wheel.position.set(x, 0.48, z);
-        car.add(wheel);
+        car.add(wheel);\n        this.carWheels.push(wheel);
       }
       box([0.18, 0.22, 0.12], [x, 0.9, -2.08], mat(0xf3d9a2, 0.4, { emissive: 0x9b7138, emissiveIntensity: 0.2 }), car, false);
     }
@@ -450,7 +451,7 @@ export class Renderer {
     });
     geometries.forEach(geometry => geometry.dispose());
     materials.forEach(material => material.dispose());
-    textures.forEach(texture => texture.dispose());
+    textures.forEach(texture => texture.dispose());\n    this.materialLibrary?.dispose();\n    this.materialLibrary = null;
     this.scene.remove(this.levelRoot);
     this.levelRoot = null;
 
