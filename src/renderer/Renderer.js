@@ -1,29 +1,8 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-import { GRID, SOLID_CELLS, cellCenter } from "../level/layout.js";
 import { VIEWMODEL_CONFIG } from "../config/viewmodel.js";
 import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
-
-function makeNoiseTexture(base, speckle, size = 256) {
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < 9500; i++) {
-    const x = Math.random() * size, y = Math.random() * size;
-    const a = Math.random() * 0.16;
-    ctx.fillStyle = speckle;
-    ctx.globalAlpha = a;
-    ctx.fillRect(x, y, Math.random() * 3 + 1, Math.random() * 3 + 1);
-  }
-  ctx.globalAlpha = 1;
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
 
 export class Renderer {
   constructor(canvas) {
@@ -175,9 +154,9 @@ export class Renderer {
     }
     box([5.0, 0.2, 0.28], [0, 3.32, 2.95], trim);
     for (const side of [-1, 1]) {
-      const door = box([1.05, 2.65, 0.14], [side * 0.62, 1.65, 1.48], wood);
-      door.rotation.y = side * 0.55;
-      box([0.78, 1.75, 0.035], [side * 0.62, 1.75, 1.39], mat(0x76563b), world, false);
+      const door = box([1.05, 2.65, 0.14], [side * 1.15, 1.65, 1.48], wood);
+      door.rotation.y = side * 1.35;
+      box([0.78, 1.75, 0.035], [side * 1.15, 1.75, 1.39], mat(0x76563b), world, false);
       cylinder(0.035, 0.035, 0.04, [side * 0.22, 1.5, 1.31], darkMetal, 8).rotation.z = Math.PI / 2;
     }
     // Front windows with cream frames and warm glass.
