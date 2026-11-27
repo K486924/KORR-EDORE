@@ -59,10 +59,12 @@ export function createFarmhouseInterior(scene, interactions) {
   box([5.05, 2.85, thick], [5.05, 5.05, 1.25], plaster, root, true);
   box([5.15, 2.85, thick], [0, 5.05, 1.25], plaster, root, true);
   // Upstairs partitions and bedroom openings.
-  box([thick, 2.85, 8.4], [-2.15, 5.05, -9.6], plaster, root, true);
-  box([thick, 2.85, 6.0], [2.15, 5.05, -10.8], plaster, root, true);
-  box([4.8, 2.85, thick], [-4.95, 5.05, -7.2], plaster, root, true);
-  box([4.8, 2.85, thick], [4.95, 5.05, -7.2], plaster, root, true);
+  for (const x of [-2.15, 2.15]) {
+    box([thick, 2.85, 1.2], [x, 5.05, -8.0], plaster, root, true);
+    box([thick, 2.85, 2.8], [x, 5.05, -12.0], plaster, root, true);
+  }
+  for (const x of [-6.5, -3.4, 3.4, 6.5])
+    box([1.7, 2.85, thick], [x, 5.05, -7.2], plaster, root, true);
   box([15.2, 0.18, 15.0], [0, 6.65, -6.25], trim);
   const groundSolidMeshes = solidMeshes.slice(0, upperSolidStart);
   const upperSolidMeshes = solidMeshes.slice(upperSolidStart);
