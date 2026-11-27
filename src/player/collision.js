@@ -43,35 +43,47 @@ function resolveAxis(position, radius, axis, extraSolidCells = null) {
 function resolveMeshCollisions(position, radius, meshes) {
   if (!meshes?.length) return;
   const center = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
+  const worldScale = new THREE.Vector3();
+  const worldQuaternion = new THREE.Quaternion();
   const local = new THREE.Vector3();
   const closest = new THREE.Vector3();
+  const localCenter = new THREE.Vector3();
+  const inverse = new THREE.Quaternion();
   for (let pass = 0; pass < 3; pass++) {
     for (const mesh of meshes) {
       if (!mesh?.visible || mesh.userData?.collisionEnabled === false) continue;
       mesh.updateWorldMatrix(true, false);
-      mesh.getWorldPosition(center);
-      mesh.getWorldQuaternion(quaternion);
-      const sx = mesh.scale.x, sz = mesh.scale.z;
-      const halfX = (mesh.geometry?.parameters?.width || 0.2) * Math.abs(sx) * 0.5;
-      const halfZ = (mesh.geometry?.parameters?.depth || 0.2) * Math.abs(sz) * 0.5;
-      local.set(position.x - center.x, 0, position.z - center.z).applyQuaternion(quaternion.clone().invert());
+      mesh.matrixWorld.decompose(center, worldQuaternion, worldScale);
+      const geometry = mesh.geometry;
+      if (!geometry) continue;
+      if (!geometry.boundingBox) geometry.computeBoundingBox();
+      const bounds = geometry.boundingBox;
+      if (!bounds) continue;
+      const halfX = (bounds.max.x - bounds.min.x) * Math.abs(worldScale.x) * 0.5;
+      const halfZ = (bounds.max.z - bounds.min.z) * Math.abs(worldScale.z) * 0.5;
+      localCenter.set((bounds.max.x + bounds.min.x) * 0.5 * worldScale.x, 0,
+        (bounds.max.z + bounds.min.z) * 0.5 * worldScale.z).applyQuaternion(worldQuaternion);
+      const boxCenterX = center.x + localCenter.x;
+      const boxCenterZ = center.z + localCenter.z;
+      inverse.copy(worldQuaternion).invert();
+      local.set(position.x - boxCenterX, 0, position.z - boxCenterZ).applyQuaternion(inverse);
       closest.set(Math.max(-halfX, Math.min(local.x, halfX)), 0,
         Math.max(-halfZ, Math.min(local.z, halfZ)));
       const dx = local.x - closest.x, dz = local.z - closest.z;
       const distanceSq = dx * dx + dz * dz;
       if (distanceSq >= radius * radius) continue;
-      let nx = dx, nz = dz;
-      let distance = Math.sqrt(distanceSq);
+      let nx = dx, nz = dz, distance = Math.sqrt(distanceSq);
       if (distance < 1e-7) {
         const px = halfX - Math.abs(local.x), pz = halfZ - Math.abs(local.z);
         if (px < pz) { nx = local.x >= 0 ? 1 : -1; nz = 0; distance = -px; }
         else { nx = 0; nz = local.z >= 0 ? 1 : -1; distance = -pz; }
       }
       const push = radius - distance;
-      local.x += nx / Math.max(1e-7, Math.hypot(nx, nz)) * push;
-      local.z += nz / Math.max(1e-7, Math.hypot(nx, nz)) * push;
-      const corrected = new THREE.Vector3(local.x, 0, local.z).applyQuaternion(quaternion).add(center);
+      const normalLength = Math.max(1e-7, Math.hypot(nx, nz));
+      local.x += nx / normalLength * push;
+      local.z += nz / normalLength * push;
+      const corrected = new THREE.Vector3(local.x, 0, local.z)
+        .applyQuaternion(worldQuaternion).add(new THREE.Vector3(boxCenterX, 0, boxCenterZ));
       position.x = corrected.x;
       position.z = corrected.z;
     }
