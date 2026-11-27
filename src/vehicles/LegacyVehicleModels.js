@@ -267,7 +267,7 @@ function buildCargoTruck() {
   const doorWin = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.52), glassMat);
   doorWin.rotation.y = Math.PI / 2; doorWin.position.set(0, 1.16, 0.56);
   doorPivot.add(doorPanel, doorWin); truck.add(doorPivot);
-  const doorPart = { pivot: doorPivot, open: false, angle: 0, maxAngle: 1.02 };
+  const doorPart = { pivot: doorPivot, open: false, angle: 0, maxAngle: -1.02 };
   aimTargets.push({
     mesh: doorPanel, maxDist: 3.8,
     getLabel: () => (doorPart.open ? "Get In Truck Cab" : "Open Truck Door"),
