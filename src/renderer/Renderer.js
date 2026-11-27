@@ -109,6 +109,7 @@ export class Renderer {
     const wood = materials.darkWood(0x60452f);
     const trim = materials.paint(0xf4ecdd);
     const darkMetal = materials.metal(0x303a36, 0.78);
+    const chrome = materials.metal(0xc8c8c8, 0.28);
     const grass = materials.grass(0x6d8049);
     const pathMat = materials.soil(0x806a4c);
     const glass = new THREE.MeshStandardMaterial({ color: 0xffdca1, roughness: 0.28, emissive: 0x8b6331, emissiveIntensity: 0.28 });
