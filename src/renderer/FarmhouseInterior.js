@@ -65,6 +65,8 @@ export function createFarmhouseInterior(scene, interactions) {
   }
   for (const x of [-6.5, -3.4, 3.4, 6.5])
     box([1.7, 2.85, thick], [x, 5.05, -7.2], plaster, root, true);
+  box([1.3, 2.85, thick], [-1.9, 5.05, -7.2], plaster, root, true);
+  box([1.3, 2.85, thick], [1.9, 5.05, -7.2], plaster, root, true);
   box([15.2, 0.18, 15.0], [0, 6.65, -6.25], trim);
   const upperSolidMeshes = solidMeshes.slice(upperSolidStart);
   upperSolidMeshes.forEach(mesh => {
@@ -149,7 +151,7 @@ export function createFarmhouseInterior(scene, interactions) {
   const receptionDrawerFront = box([0.68, 0.22, 0.035], [1.45, 0.82, -1.36], wood, receptionDrawer);
   receptionDrawerFront.userData.closedZ = receptionDrawerFront.position.z;
   const receptionPull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), brass);
-  receptionPull.position.set(3.0, 0.82, -1.31); receptionDrawer.add(receptionPull);
+  receptionPull.position.set(1.45, 0.82, -1.31); receptionDrawer.add(receptionPull);
   root.add(receptionDrawer);
   interactions.register(receptionDrawer, { id: "reception-drawer", label: "SEARCH RECEPTION DRAWER", maxDistance: 2.5 });
   makeKey("ritual-key-reception", [1.45, 1.42, -1.65], "TAKE THIRD RITUAL KEY");
