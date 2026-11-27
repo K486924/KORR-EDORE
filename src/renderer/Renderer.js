@@ -625,6 +625,31 @@ export class Renderer {
     return state.open;
   }
 
+  toggleRitualRoomDoor() {
+    const state = this.interiorLevel?.ritualDoor;
+    if (!state) return false;
+    state.open = !state.open;
+    return state.open;
+  }
+
+  openInteriorDrawer(which) {
+    const level = this.interiorLevel;
+    const front = which === "bedroom" ? level?.bedroomDrawerFront : level?.receptionDrawerFront;
+    if (!front) return false;
+    front.position.z = front.userData.closedZ + 0.24;
+    return true;
+  }
+
+  startChillaSequence() {
+    const state = this.interiorLevel?.ritualState;
+    if (!state || state.started) return false;
+    state.started = true;
+    state.ring.material.color.setHex(0x9b2922);
+    state.ring.material.emissive?.setHex(0x67110d);
+    if (state.ring.material.emissive) state.ring.material.emissiveIntensity = 1.35;
+    return true;
+  }
+
   getFloorOffsetAt(x, z) {
     if (this.activeLevel !== "interior") return 0;
     this.currentInteriorFloorOffset = this.interiorLevel.floorHeightAt(x, z, this.currentInteriorFloorOffset);
@@ -912,6 +937,15 @@ export class Renderer {
     if (exitState) {
       exitState.angle += ((exitState.open ? 1.2 : 0) - exitState.angle) * (1 - Math.exp(-dt * 7.5));
       for (const leaf of exitState.hinges) leaf.hinge.rotation.y = leaf.side * exitState.angle;
+    }
+    const ritualDoor = this.interiorLevel?.ritualDoor;
+    if (ritualDoor) {
+      ritualDoor.angle += ((ritualDoor.open ? 1.28 : 0) - ritualDoor.angle) * (1 - Math.exp(-dt * 6.5));
+      for (const leaf of ritualDoor.hinges) leaf.hinge.rotation.y = leaf.side * ritualDoor.angle;
+    }
+    const ritualState = this.interiorLevel?.ritualState;
+    if (ritualState?.started && ritualState.light) {
+      ritualState.light.intensity = 1.1 + (Math.sin(this.elapsed * 5.4) * 0.5 + 0.5) * 1.6;
     }
     if (this.gateLeaves) {
       const gateAlpha = 1 - Math.exp(-dt * 2.4);
