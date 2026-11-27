@@ -225,9 +225,11 @@ export class Game {
     if (title) title.textContent = label;
     overlay?.classList.add("is-visible");
     window.setTimeout(() => {
-      callback();
-      this.levelTransitioning = false;
-      overlay?.classList.remove("is-visible");
+      try { callback(); }
+      finally {
+        this.levelTransitioning = false;
+        overlay?.classList.remove("is-visible");
+      }
     }, 380);
   }
 
