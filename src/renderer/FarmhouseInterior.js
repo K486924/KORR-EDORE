@@ -99,14 +99,14 @@ export function createFarmhouseInterior(scene, interactions) {
   box([3.0, 0.34, 2.15], [-5.15, 0.52, -1.35], darkWood);
   box([2.85, 0.28, 1.95], [-5.15, 0.82, -1.35], pale);
   box([2.85, 0.25, 0.52], [-5.15, 1.02, -2.0], fabric);
-  box([1.55, 2.30, 0.68], [-7.0, 1.45, -2.0], wood, root, true);
-  box([1.85, 0.13, 0.86], [-3.45, 1.0, -0.65], wood);
-  box([0.10, 0.95, 0.10], [-4.2, 0.48, -0.35], darkWood);
-  box([0.10, 0.95, 0.10], [-2.7, 0.48, -0.35], darkWood);
+  box([1.55, 2.30, 0.68], [-6.7, 1.45, -3.2], wood, root, true);
+  box([1.85, 0.13, 0.86], [-3.45, 1.0, -3.1], wood);
+  box([0.10, 0.95, 0.10], [-4.2, 0.48, -2.8], darkWood);
+  box([0.10, 0.95, 0.10], [-2.7, 0.48, -2.8], darkWood);
   const diary = new THREE.Group();
   box([0.42, 0.055, 0.30], [0, 0, 0], darkWood, diary);
   box([0.39, 0.018, 0.27], [0, 0.036, 0], pale, diary);
-  diary.position.set(-3.45, 1.12, -0.65); root.add(diary);
+  diary.position.set(-3.45, 1.12, -3.1); root.add(diary);
   interactions.register(diary, { id: "story-diary", label: "READ UNCLE'S DIARY", maxDistance: 2.6 });
   const key = new THREE.Group();
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.025, 8, 18), brass);
@@ -115,7 +115,7 @@ export function createFarmhouseInterior(scene, interactions) {
   stem.position.x = 0.22;
   const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.10, 0.045), brass);
   tooth.position.set(0.35, -0.05, 0);
-  key.add(ring, stem, tooth); key.position.set(-3.0, 1.15, -0.65); root.add(key);
+  key.add(ring, stem, tooth); key.position.set(-3.0, 1.15, -3.1); root.add(key);
   interactions.register(key, { id: "generator-key", label: "TAKE BRASS KEY", maxDistance: 2.8, enabled: () => key.visible });
 
   // Living room, old photograph and reception console.
