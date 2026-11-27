@@ -1,4 +1,4 @@
-import { Renderer } from "../renderer/Renderer.js?build=7";
+import { Renderer } from "../renderer/Renderer.js?build=8";
 import { moveWithCollisions } from "../player/collision.js";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
@@ -211,6 +211,12 @@ export class Game {
       tire.mesh.scale.y = 1;
       tire.tireMesh.material.color.setHex(0x171a19);
       this.showGameToast(tire.label + " tyre replaced. Spares: " + this.spareTires);
+      return;
+    }
+    if (target.id.startsWith("legacy-vehicle-part-")) {
+      const index = Number(target.id.split("-").pop());
+      const legacy = this.renderer.legacyVehicleTargets?.[index];
+      legacy?.onInteract?.();
       return;
     }
     if (target.id === "generator-key") {
