@@ -6,7 +6,7 @@ function cellIndex(value, origin) {
   return Math.floor((value - origin) / GRID.cellSize);
 }
 
-function resolveAxis(position, radius, axis) {
+function resolveAxis(position, radius, axis, extraSolidCells = null) {
   const otherAxis = axis === "x" ? "z" : "x";
   const origin = axis === "x" ? GRID.originX : GRID.originZ;
   const otherOrigin = otherAxis === "x" ? GRID.originX : GRID.originZ;
@@ -18,7 +18,8 @@ function resolveAxis(position, radius, axis) {
     for (let b = otherIndex - 1; b <= otherIndex + 1; b++) {
       const xIndex = axis === "x" ? a : b;
       const zIndex = axis === "z" ? a : b;
-      if (!SOLID_CELL_KEYS.has(`${xIndex},${zIndex}`)) continue;
+      const key = `${xIndex},${zIndex}`;
+      if (!SOLID_CELL_KEYS.has(key) && !extraSolidCells?.has(key)) continue;
 
       const boxX = GRID.originX + xIndex * GRID.cellSize + HALF_CELL;
       const boxZ = GRID.originZ + zIndex * GRID.cellSize + HALF_CELL;
@@ -56,10 +57,10 @@ function resolveAxis(position, radius, axis) {
   }
 }
 
-export function moveWithCollisions(position, deltaX, deltaZ, radius) {
+export function moveWithCollisions(position, deltaX, deltaZ, radius, extraSolidCells = null) {
   position.x += deltaX;
-  resolveAxis(position, radius, "x");
+  resolveAxis(position, radius, "x", extraSolidCells);
   position.z += deltaZ;
-  resolveAxis(position, radius, "z");
+  resolveAxis(position, radius, "z", extraSolidCells);
   return position;
 }
