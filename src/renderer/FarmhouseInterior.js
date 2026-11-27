@@ -57,6 +57,7 @@ export function createFarmhouseInterior(scene, interactions) {
   box([15.25, 2.85, thick], [0, 5.05, -13.82], plaster, root, true);
   box([5.05, 2.85, thick], [-5.05, 5.05, 1.25], plaster, root, true);
   box([5.05, 2.85, thick], [5.05, 5.05, 1.25], plaster, root, true);
+  box([5.15, 2.85, thick], [0, 5.05, 1.25], plaster, root, true);
   // Upstairs partitions and bedroom openings.
   box([thick, 2.85, 8.4], [-2.15, 5.05, -9.6], plaster, root, true);
   box([thick, 2.85, 6.0], [2.15, 5.05, -10.8], plaster, root, true);
