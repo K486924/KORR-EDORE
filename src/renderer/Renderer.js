@@ -4,7 +4,7 @@ import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
-import { InteractionSystem } from "../interaction/InteractionSystem.js?v=4";
+import { InteractionSystem } from "../interaction/InteractionSystem.js?v=5";
 
 export class Renderer {
   constructor(canvas) {
@@ -266,55 +266,35 @@ export class Renderer {
     }
 
     // A parked family saloon, ready for the arrival sequence to be added.
-    const car = new THREE.Group();
-    const carPaint = mat(0x354c50, 0.38, { metalness: 0.48 });
-    const tyre = mat(0x171a19, 0.95);
-    box([2.0, 0.62, 4.05], [0, 0.82, 0], carPaint, car);
-    box([1.72, 0.78, 2.05], [0, 1.43, -0.22], mat(0x263c40, 0.32, { metalness: 0.3 }), car);
-    box([1.55, 0.52, 1.82], [0, 1.48, -0.24], mat(0x8ea6a5, 0.25, { transparent: true, opacity: 0.7 }), car, false);
-    // Glazing, bonnet details, bumpers and door seams give the low-poly saloon
-    // a readable silhouette without importing another heavy model.
-    const carGlass = new THREE.MeshStandardMaterial({ color: 0x8ea6a5, roughness: 0.22, metalness: 0.12, transparent: true, opacity: 0.76 });
-    const chrome = materials.metal(0x9ba49e, 0.88);
-    const lamp = new THREE.MeshStandardMaterial({ color: 0xffe6b0, emissive: 0xffd18a, emissiveIntensity: 0.35, roughness: 0.3 });
-    box([1.48, 0.42, 0.055], [0, 1.57, -1.27], carGlass, car, false).rotation.x = -0.24;
-    box([1.48, 0.4, 0.055], [0, 1.55, 0.83], carGlass, car, false).rotation.x = 0.2;
-    for (const side of [-1, 1]) {
-      box([0.055, 0.43, 0.78], [side * 0.87, 1.52, -0.42], carGlass, car, false);
-      box([0.055, 0.43, 0.78], [side * 0.87, 1.52, 0.43], carGlass, car, false);
-      box([0.16, 0.12, 0.22], [side * 1.02, 1.42, -0.65], carPaint, car);
-      box([0.06, 0.07, 0.18], [side * 1.08, 1.44, -0.65], chrome, car, false);
-      box([0.12, 0.1, 0.12], [side * 0.72, 1.02, -1.98], lamp, car, false);
-      box([0.12, 0.1, 0.12], [side * 0.72, 1.02, 1.98], mat(0x9f3430, 0.4, { emissive: 0x4a100c, emissiveIntensity: 0.18 }), car, false);
-      box([0.045, 0.55, 0.045], [side * 0.88, 1.48, 0], chrome, car, false);
-    }
-    box([1.55, 0.16, 0.12], [0, 0.62, -2.05], chrome, car, false);
-    box([1.55, 0.16, 0.12], [0, 0.62, 2.05], chrome, car, false);
-    box([0.72, 0.16, 0.035], [0, 0.82, -2.08], darkMetal, car, false);
-    box([1.0, 0.055, 1.45], [0, 1.85, -0.2], carPaint, car, false);
-    box([1.82, 0.12, 0.12], [0, 0.98, -2.04], trim, car, false);
-    this.carWheels = [];
-    this.carTireStates = [];
-    for (const x of [-0.83, 0.83]) {
-      for (const z of [-1.35, 1.35]) {
-        const wheel = new THREE.Group();
-        wheel.position.set(x, 0.48, z);
-        const tireMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.2, 20), tyre);
-        tireMesh.rotation.z = Math.PI / 2;
-        wheel.add(tireMesh);
-        car.add(wheel);
-        const state = { mesh: wheel, tireMesh, health: 1, blown: false, label: (z < 0 ? "Front" : "Rear") + (x < 0 ? " left" : " right") };
-        this.carWheels.push(wheel);
-        this.carTireStates.push(state);
-        this.interactions.register(tireMesh, { id: "car-tire-" + this.carTireStates.length, label: "CHECK " + state.label.toUpperCase() + " TYRE", maxDistance: 3.2, enabled: () => state.blown });
-      }
-      box([0.18, 0.22, 0.12], [x, 0.9, -2.08], mat(0xf3d9a2, 0.4, { emissive: 0x9b7138, emissiveIntensity: 0.2 }), car, false);
-    }
-    car.position.set(-5.0, 0, 12.8);
-    car.rotation.y = 0.08;
-    world.add(car);
-    this.arrivalCar = car;
-    this.interactions.register(car, { id: "arrival-car", label: "ENTER VEHICLE", maxDistance: 4.2 });
+    // Detailed models ported from the original KORR EDORE core-world build.
+    const legacyTargets = [];
+    this.vehicleFleet = createLegacyFleet({
+      aimTargets: legacyTargets,
+      showToast: message => { this.lastVehicleToast = message; },
+      enterVehicle: () => {}
+    });
+    const { sedan, truck, bike } = this.vehicleFleet;
+    sedan.position.set(-5.0, 0, 12.8);
+    sedan.rotation.y = 0.08;
+    truck.position.set(14.5, 0, 7.5);
+    truck.rotation.y = -Math.PI / 2 + 0.15;
+    bike.position.set(-1.5, 0, 8.8);
+    bike.rotation.y = 0.45;
+    world.add(sedan, truck, bike);
+    this.arrivalCar = sedan;
+    this.carWheels = sedan.userData.wheels.map(w => w.steerGrp);
+    this.carTireStates = sedan.userData.wheels;
+    this.interactions.register(sedan, { id: "arrival-car", label: "ENTER VEHICLE", maxDistance: 4.2 });
+    legacyTargets.forEach((target, index) => {
+      if (!target.mesh) return;
+      this.interactions.register(target.mesh, {
+        id: "legacy-vehicle-part-" + index,
+        label: target.getLabel?.() || "INTERACT",
+        maxDistance: target.maxDist || 3.5,
+        enabled: () => true
+      });
+      target.mesh.userData.onLegacyInteract = target.onInteract;
+    });
 
     // Spare tyre pickups around the driveway; one can be carried at a time.
     this.spareTirePickups = [];
