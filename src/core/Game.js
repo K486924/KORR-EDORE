@@ -15,7 +15,11 @@ export class Game {
     this.hasGeneratorKey = false;
     this.carSpeed = 0;
     this.spareTires = 1;
-    this.offroadWear = 0;\n    this.stamina = 100;\n    this.health = 100;\n    this.sprintHeld = false;\n    this.sprintRegenDelay = 0;
+    this.offroadWear = 0;
+    this.stamina = 100;
+    this.health = 100;
+    this.sprintHeld = false;
+    this.sprintRegenDelay = 0;
     this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
     this.setupInput(canvas);
@@ -27,7 +31,8 @@ export class Game {
     this.yaw = camera.rotation.y;
     const onKey = (event, down) => {
       const key = event.key.toLowerCase();
-      if (key === "shift") this.sprintHeld = down;\n      if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
+      if (key === "shift") this.sprintHeld = down;
+      if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
       if (down && !event.repeat && key === "e") this.handleContextInteraction();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
         event.preventDefault();
@@ -145,7 +150,18 @@ export class Game {
     const strafe = (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) +
       (this.keys.has("a") || this.keys.has("arrowleft") ? -1 : 0) + this.move.x;
     const length = Math.hypot(forward, strafe) || 1;
-    const moving = Math.abs(forward) + Math.abs(strafe) > 0.01;\n    const canSprint = this.sprintHeld && moving && this.stamina > 0.5;\n    const sprintMultiplier = canSprint ? 1.7 : 1;\n    const speed = PLAYER_CONFIG.moveSpeed * sprintMultiplier * delta / length;\n    if (canSprint) {\n      this.stamina = Math.max(0, this.stamina - 28 * delta);\n      this.sprintRegenDelay = 0.65;\n    } else {\n      this.sprintRegenDelay = Math.max(0, this.sprintRegenDelay - delta);\n      if (this.sprintRegenDelay <= 0) this.stamina = Math.min(100, this.stamina + 19 * delta);\n    }\n    this.updatePlayerStatus();
+    const moving = Math.abs(forward) + Math.abs(strafe) > 0.01;
+    const canSprint = this.sprintHeld && moving && this.stamina > 0.5;
+    const sprintMultiplier = canSprint ? 1.7 : 1;
+    const speed = PLAYER_CONFIG.moveSpeed * sprintMultiplier * delta / length;
+    if (canSprint) {
+      this.stamina = Math.max(0, this.stamina - 28 * delta);
+      this.sprintRegenDelay = 0.65;
+    } else {
+      this.sprintRegenDelay = Math.max(0, this.sprintRegenDelay - delta);
+      if (this.sprintRegenDelay <= 0) this.stamina = Math.min(100, this.stamina + 19 * delta);
+    }
+    this.updatePlayerStatus();
     const camera = this.renderer.camera;
     const startX = camera.position.x;
     const startZ = camera.position.z;
