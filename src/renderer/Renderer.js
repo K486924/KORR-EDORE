@@ -895,8 +895,8 @@ export class Renderer {
     }
     const exitState = this.interiorLevel?.exitState;
     if (exitState) {
-      exitState.angle += ((exitState.open ? -1.2 : 0) - exitState.angle) * (1 - Math.exp(-dt * 7.5));
-      exitState.hinge.rotation.y = exitState.angle;
+      exitState.angle += ((exitState.open ? 1.2 : 0) - exitState.angle) * (1 - Math.exp(-dt * 7.5));
+      for (const leaf of exitState.hinges) leaf.hinge.rotation.y = leaf.side * exitState.angle;
     }
     if (this.gateLeaves) {
       const gateAlpha = 1 - Math.exp(-dt * 2.4);
