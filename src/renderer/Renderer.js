@@ -3,6 +3,7 @@ import { VIEWMODEL_CONFIG } from "../config/viewmodel.js";
 import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
+import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 
 export class Renderer {
   constructor(canvas) {
@@ -85,6 +86,7 @@ export class Renderer {
     this.levelRoot = new THREE.Group();
     this.scene.add(this.levelRoot);
     const world = this.levelRoot;
+    const materials = createMaterialLibrary();
 
     // A bright, quiet afternoon. The house should feel like somewhere people
     // would genuinely want to spend a weekend.
@@ -92,18 +94,20 @@ export class Renderer {
     this.scene.fog = new THREE.Fog(0xc4d3d0, 42, 115);
     this.renderer.toneMappingExposure = 1.12;
 
-    const mat = (color, roughness = 0.9, extra = {}) =>
-      new THREE.MeshStandardMaterial({ color, roughness, ...extra });
-    const plaster = mat(0xd7cbb3);
-    const stone = mat(0x827d6d);
-    const roofMat = mat(0x424b43);
-    const wood = mat(0x573c2b);
-    const trim = mat(0xf0e5d0);
-    const darkMetal = mat(0x303a36, 0.55, { metalness: 0.65 });
-    const grass = mat(0x55734a);
-    const pathMat = mat(0xb3a48a);
-    const glass = mat(0xffdca1, 0.28, { emissive: 0x8b6331, emissiveIntensity: 0.28 });
-    const leafMats = [mat(0x3d633f), mat(0x527747), mat(0x647d4c)];
+    const mat = (color, roughness = 0.9, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness, ...extra });
+    const plaster = materials.plaster(0xe4dac8);
+    const foundation = materials.plaster(0xb9ad98);
+    const roofMat = materials.darkWood(0x424a43);
+    const wood = materials.darkWood(0x60452f);
+    const trim = materials.paint(0xf4ecdd);
+    const darkMetal = materials.metal(0x303a36, 0.78);
+    const grass = materials.grass(0x6d8049);
+    const pathMat = materials.soil(0x806a4c);
+    const glass = new THREE.MeshStandardMaterial({ color: 0xffdca1, roughness: 0.28, emissive: 0x8b6331, emissiveIntensity: 0.28 });
+    const leafMats = [materials.leaf(0x3d633f), materials.leaf(0x527747), materials.leaf(0x647d4c)];
+    const fabric = materials.fabric(0xb9aa94);
+    const paleFabric = materials.fabric(0xd4c7b1);
+    const floorWood = materials.wood(0xc09a6c);
 
     const box = (size, position, material, parent = world, cast = true) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
@@ -121,14 +125,14 @@ export class Renderer {
       return mesh;
     };
 
-    // Grounds and the broad stone drive.
+    // Grounds and the compacted-earth driveway.
     box([180, 0.25, 180], [0, -0.2, -35], grass, world, false);
     box([5.2, 0.035, 31], [0, -0.045, 1.5], pathMat, world, false);
     box([22, 0.04, 7], [0, -0.04, 17], pathMat, world, false);
     box([19, 0.05, 3.2], [0, -0.01, -0.1], pathMat, world, false);
 
     // The farmhouse: a broad two-storey country home, not a horror corridor.
-    box([16, 0.35, 15.5], [0, 0.0, -6.25], stone);
+    box([16, 0.35, 15.5], [0, 0.0, -6.25], foundation);
     box([15.8, 0.16, 15.25], [0, 0.25, -6.25], mat(0x9b927f), world, false);
     const wallY = 1.98;
     const wallH = 3.45;
@@ -138,7 +142,7 @@ export class Renderer {
     box([0.42, wallH, 15.5], [-7.9, wallY, -6.25], plaster);
     box([0.42, wallH, 15.5], [7.9, wallY, -6.25], plaster);
     box([16.2, wallH, 0.42], [0, wallY, -14.0], plaster);
-    // Upper floor band and a shallow, pitched roof.
+    // Interior partitions: broad openings keep the central hall connected to each room.\n    const innerWall = plaster;\n    const iw = 0.16, ih = 3.05;\n    for (const x of [-2.05, 2.05]) {\n      for (const [z, length] of [[-12.0, 3.0], [-8.1, 3.1], [-3.0, 4.0]]) {\n        box([iw, ih, length], [x, 1.78, z], innerWall);\n      }\n    }\n    // Front bedroom/reception partition with two generous door openings.\n    for (const [x, length] of [[-5.3, 4.6], [0, 1.2], [5.3, 4.6]]) {\n      box([length, ih, iw], [x, 1.78, -4.65], innerWall);\n    }\n    // Ceiling is intentionally omitted in this first interior pass so the roofline and room layout remain readable.\n\n    // Upper floor band and a shallow, pitched roof.
     box([16.25, 0.24, 15.8], [0, 3.68, -6.25], trim);
     const roofLeft = box([8.9, 0.34, 17.2], [-4.0, 4.25, -6.25], roofMat);
     roofLeft.rotation.z = -0.32;
@@ -147,10 +151,10 @@ export class Renderer {
     box([0.42, 0.5, 17.4], [0, 5.0, -6.25], roofMat);
 
     // Front porch, open double doors and welcoming windows.
-    box([5.2, 0.22, 2.4], [0, 0.32, 2.55], stone);
+    box([5.2, 0.22, 2.4], [0, 0.32, 2.55], foundation);
     for (const x of [-2.15, 2.15]) {
       box([0.24, 3.0, 0.24], [x, 1.8, 2.95], trim);
-      box([0.28, 0.22, 0.28], [x, 3.32, 2.95], stone);
+      box([0.28, 0.22, 0.28], [x, 3.32, 2.95], foundation);
     }
     box([5.0, 0.2, 0.28], [0, 3.32, 2.95], trim);
     for (const side of [-1, 1]) {
@@ -174,7 +178,7 @@ export class Renderer {
       }
     }
     // A subtle balcony above the entrance.
-    box([5.2, 0.18, 1.1], [0, 3.95, 2.0], stone);
+    box([5.2, 0.18, 1.1], [0, 3.95, 2.0], foundation);
     box([5.2, 0.12, 0.1], [0, 4.55, 2.5], trim, world, false);
     for (let x = -2.4; x <= 2.41; x += 0.6) {
       box([0.055, 0.58, 0.055], [x, 4.27, 2.5], trim, world, false);
@@ -182,9 +186,9 @@ export class Renderer {
 
     // Gate pillars and a pair of dark iron swing gates.
     for (const x of [-3.15, 3.15]) {
-      box([0.72, 2.8, 0.72], [x, 1.4, 8.4], stone);
+      box([0.72, 2.8, 0.72], [x, 1.4, 8.4], foundation);
       box([0.92, 0.22, 0.92], [x, 2.88, 8.4], trim);
-      box([0.55, 0.18, 0.55], [x, 3.08, 8.4], stone);
+      box([0.55, 0.18, 0.55], [x, 3.08, 8.4], foundation);
     }
     this.gateLeaves = [];
     this.gateCollisionCells = new Set();
@@ -230,10 +234,10 @@ export class Renderer {
 
     // Garden beds, low hedges, lanterns and mature trees around the property.
     for (const side of [-1, 1]) {
-      box([1.2, 0.42, 10], [side * 5.1, 0.18, 1.5], mat(0x3c5b36));
+      box([1.2, 0.42, 10], [side * 10.1, 0.18, 1.5], mat(0x3c5b36));
       for (let i = 0; i < 5; i++) {
         const bush = new THREE.Mesh(new THREE.SphereGeometry(0.42 + (i % 2) * 0.08, 10, 8), leafMats[i % leafMats.length]);
-        bush.position.set(side * (4.9 + (i % 2) * 0.35), 0.45, -2.2 + i * 1.65);
+        bush.position.set(side * (9.9 + (i % 2) * 0.35), 0.45, -2.2 + i * 1.65);
         bush.scale.y = 0.72;
         world.add(bush);
       }
@@ -255,7 +259,7 @@ export class Renderer {
     };
     [[-13,-5,1.15],[13,-8,1.25],[-15,8,1.1],[15,10,1.2],[-10,-22,1.4],[11,-24,1.35],[-20,2,1.5],[20,-2,1.45],[-8,18,1.1],[9,20,1.1]].forEach(p => makeTree(...p));
 
-    // Soft daylight and a little warm light inside the front rooms.
+    // Furnish the ground floor: living room, dining/kitchen, bedrooms and reception.\n    const rug = materials.fabric(0x8d7860);\n    box([4.0, 0.035, 3.1], [-5.0, 0.36, -9.1], rug, world, false);\n    // Living room sofa and cushions.\n    box([3.5, 0.62, 0.92], [-5.0, 0.72, -7.2], wood);\n    box([3.25, 0.72, 0.22], [-5.0, 1.12, -7.62], fabric);\n    for (const x of [-6.35, -5.45, -4.55, -3.65]) box([0.78, 0.42, 0.7], [x, 1.02, -7.12], paleFabric);\n    box([1.8, 0.28, 1.0], [-5.0, 0.52, -10.0], wood);\n    box([2.4, 0.18, 0.5], [-7.25, 0.42, -8.9], wood);\n    box([0.18, 1.15, 2.2], [-7.35, 0.85, -9.0], darkMetal);\n    // Dining table, six chairs and a simple kitchen island.\n    box([2.6, 0.16, 1.35], [5.0, 1.02, -9.7], wood);\n    for (const x of [4.0, 5.0, 6.0]) for (const z of [-8.7, -10.7]) {\n      box([0.72, 0.14, 0.72], [x, 0.68, z], wood);\n      box([0.72, 0.62, 0.12], [x, 1.0, z + (z < -9 ? -0.28 : 0.28)], fabric);\n    }\n    box([3.7, 0.88, 0.72], [5.1, 0.78, -5.9], paleFabric);\n    box([3.7, 0.1, 0.72], [5.1, 1.25, -5.9], wood);\n    for (const x of [3.6, 5.0, 6.4]) box([0.08, 0.55, 0.58], [x, 1.56, -5.9], trim);\n    // Uncle’s bedroom: double bed, bedside tables, wardrobe and writing desk.\n    box([3.3, 0.28, 2.35], [-5.0, 0.53, -1.45], wood);\n    box([3.1, 0.32, 2.12], [-5.0, 0.78, -1.45], paleFabric);\n    box([3.1, 0.28, 0.58], [-5.0, 1.02, -2.15], fabric);\n    for (const x of [-6.0, -4.0]) box([0.72, 0.78, 0.68], [x, 0.74, 0.25], wood);\n    box([1.65, 2.35, 0.72], [-7.0, 1.45, -2.0], wood);\n    box([1.8, 0.12, 0.85], [-3.0, 1.0, -0.6], wood);\n    box([0.62, 0.82, 0.62], [-3.0, 0.75, 0.25], fabric);\n    // Reception console and a few lived-in details.\n    box([2.8, 0.9, 0.62], [5.0, 0.82, -1.7], wood);\n    box([2.9, 0.1, 0.68], [5.0, 1.32, -1.7], paleFabric);\n    for (const x of [4.1, 5.0, 5.9]) box([0.42, 0.42, 0.42], [x, 1.58, -1.7], materials.plaster(0xc9bba4));\n\n    // Soft daylight and a little warm light inside the front rooms.
     this.scene.add(new THREE.HemisphereLight(0xe8f2ee, 0x65704f, 1.55));
     this.scene.add(new THREE.AmbientLight(0xffe7c6, 0.42));
     const sun = new THREE.DirectionalLight(0xffe5bd, 2.0);
