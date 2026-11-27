@@ -16,6 +16,8 @@ export class Game {
     this.currentVehicleType = null;
     this.vehicleSpeed = 0;
     this.hasGeneratorKey = false;
+    this.storyStage = 0;
+    this.generatorStarted = false;
     this.carSpeed = 0;
     this.spareTires = 1;
     this.offroadWear = 0;
@@ -26,6 +28,7 @@ export class Game {
     this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
     this.setupInput(canvas);
+    this.updateStoryUI();
     // The optional avatar is loaded after the world starts.
   }
 
@@ -263,19 +266,61 @@ export class Game {
       }
       return;
     }
+    if (target.id === "story-diary") {
+      this.storyStage = Math.max(this.storyStage, 1);
+      this.updateStoryUI();
+      this.showGameToast("Uncle's diary: “The money came after the first winter. The house must never be left without power after dusk.”");
+      return;
+    }
+    if (target.id === "story-photo") {
+      if (this.storyStage < 1) { this.showGameToast("A photograph of your uncle with three strangers. The diary may explain it."); return; }
+      this.storyStage = Math.max(this.storyStage, 2);
+      this.updateStoryUI();
+      this.showGameToast("On the back: “Three keys. One room. Never read the last page aloud.”");
+      return;
+    }
     if (target.id === "generator-key") {
+      if (this.storyStage < 2) { this.showGameToast("The key is tucked away. Find the diary and examine the photograph first."); return; }
       this.hasGeneratorKey = true;
+      this.storyStage = Math.max(this.storyStage, 3);
       this.renderer.setGeneratorKeyCollected(true);
-      this.showGameToast("Brass key collected. It fits the generator room padlock.");
+      this.updateStoryUI();
+      this.showGameToast("You found the brass key. It is unusually cold.");
       return;
     }
     if (target.id === "generator-door") {
       if (!this.hasGeneratorKey) {
-        this.showGameToast("Locked. Find the brass key in the uncle's bedroom.");
+        this.showGameToast("The padlock needs the brass key from the uncle's bedroom.");
       } else {
         const open = this.renderer.toggleGeneratorDoor();
-        this.showGameToast(open ? "Generator room unlocked." : "Generator room secured.");
+        if (open) {
+          this.storyStage = Math.max(this.storyStage, 4);
+          this.updateStoryUI();
+        }
+        this.showGameToast(open ? "The lock gives way. The generator is waiting inside." : "Generator room secured.");
       }
+      return;
+    }
+    if (target.id === "generator-start") {
+      if (!this.renderer.generatorDoorOpen) { this.showGameToast("The generator room is locked."); return; }
+      if (!this.generatorStarted) {
+        this.generatorStarted = true;
+        this.renderer.generatorSwitchLever.rotation.x = -0.65;
+        this.renderer.storyRitualBook.visible = true;
+        this.renderer.elapsed = 180;
+        this.storyStage = 5;
+        this.updateStoryUI();
+        this.showGameToast("The generator catches. Every light in the house flickers. Something knocks from upstairs.");
+      } else {
+        this.showGameToast("The generator is running. It sounds strained.");
+      }
+      return;
+    }
+    if (target.id === "story-ritual-book") {
+      this.renderer.storyRitualBook.visible = false;
+      this.storyStage = 6;
+      this.updateStoryUI();
+      this.showGameToast("The book opens by itself. A page is marked: THE CHILLA MUST BEGIN AT 12:00.");
       return;
     }
     if (target.id.startsWith("farmhouse-gate-")) {
@@ -389,6 +434,24 @@ export class Game {
   isNearGeneratorDoor() {
     const p = this.renderer.generatorDoorPosition;
     return !!p && Math.hypot(this.renderer.camera.position.x - p.x, this.renderer.camera.position.z - p.z) < 2.8;
+  }
+
+  updateStoryUI() {
+    const title = document.querySelector("#story-chapter");
+    const objective = document.querySelector("#story-objective");
+    if (!title || !objective) return;
+    const chapters = [
+      ["THE ARRIVAL", "Find your uncle's diary in the bedroom."],
+      ["OLD PROMISES", "Examine the photograph on the living-room table."],
+      ["THREE STRANGERS", "Find the brass key on the bedroom desk."],
+      ["THE POWER ROOM", "Unlock the detached generator room."],
+      ["THE POWER ROOM", "Start the generator."],
+      ["AFTER THE LIGHTS", "Find the book that appeared inside the house."],
+      ["THE FIRST WARNING", "The ritual is real. Find a way upstairs and uncover what your uncle hid."]
+    ];
+    const current = chapters[Math.min(this.storyStage, chapters.length - 1)];
+    title.textContent = current[0];
+    objective.textContent = current[1];
   }
 
   showGameToast(message) {
