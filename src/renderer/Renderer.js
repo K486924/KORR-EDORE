@@ -197,17 +197,17 @@ export class Renderer {
     // Proper double-leaf entrance: each leaf is hinged on its jamb, raycastable and collidable.
     for (const side of [-1, 1]) {
       const hinge = new THREE.Group();
-      hinge.position.set(side * 2.1, 0.32, 1.5);
+      hinge.position.set(side * 1.35, 0.32, 1.5);
       world.add(hinge);
-      const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.65, 0.14), wood);
-      leaf.position.set(-side * 0.525, 1.325, 0);
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.65, 0.14), wood);
+      leaf.position.set(-side * 0.675, 1.325, 0);
       leaf.castShadow = true; leaf.receiveShadow = true;
       hinge.add(leaf);
-      const inset = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.75, 0.035), mat(0x76563b));
-      inset.position.set(-side * 0.525, 1.38, side * 0.075);
+      const inset = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.75, 0.035), mat(0x76563b));
+      inset.position.set(-side * 0.675, 1.38, side * 0.075);
       leaf.add(inset);
       const knob = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), materials.metal(0x9b7b42, 0.35));
-      knob.position.set(-side * 0.91, 1.42, side * 0.105);
+      knob.position.set(-side * 1.18, 1.42, side * 0.105);
       leaf.add(knob);
       leaf.userData.collisionEnabled = true;
       this.solidMeshes.push(leaf);
@@ -336,9 +336,9 @@ export class Renderer {
     for (const side of [-1, 1]) {
       const cx = side * 10.35;
       box([5.0, 0.28, 15.0], [cx, 0.18, -6.2], foundation);
-      box([4.9, 2.95, 0.30], [cx, 1.72, 1.25], plaster);
-      box([4.9, 2.95, 0.30], [cx, 1.72, -13.55], plaster);
-      box([0.30, 2.95, 14.8], [side * 12.8, 1.72, -6.2], plaster);
+      solidBox([4.9, 2.95, 0.30], [cx, 1.72, 1.25], plaster);
+      solidBox([4.9, 2.95, 0.30], [cx, 1.72, -13.55], plaster);
+      solidBox([0.30, 2.95, 14.8], [side * 12.8, 1.72, -6.2], plaster);
       // Recessed wing windows, timber frames and warm interior glazing.
       for (const z of [-10.8, -6.2, -1.6]) {
         box([0.10, 1.15, 1.35], [side * 12.63, 1.9, z], trim, world, false);
@@ -361,10 +361,10 @@ export class Renderer {
     // Small detached generator room, with a metal service door and ventilation.
     const genX = -15.7, genZ = -2.8;
     box([4.0, 0.22, 4.8], [genX, 0.02, genZ], foundation);
-    box([3.8, 2.65, 0.22], [genX, 1.35, genZ + 2.3], plaster);
-    box([3.8, 2.65, 0.22], [genX, 1.35, genZ - 2.3], plaster);
-    box([0.22, 2.65, 4.4], [genX - 1.9, 1.35, genZ], plaster);
-    box([0.22, 2.65, 4.4], [genX + 1.9, 1.35, genZ], plaster);
+    solidBox([3.8, 2.65, 0.22], [genX, 1.35, genZ + 2.3], plaster);
+    solidBox([3.8, 2.65, 0.22], [genX, 1.35, genZ - 2.3], plaster);
+    solidBox([0.22, 2.65, 4.4], [genX - 1.9, 1.35, genZ], plaster);
+    solidBox([0.22, 2.65, 4.4], [genX + 1.9, 1.35, genZ], plaster);
     box([4.35, 0.22, 5.15], [genX, 2.75, genZ], roofMat);
     box([1.05, 2.15, 0.10], [genX + 0.9, 1.1, genZ + 2.43], darkMetal);
     box([0.12, 0.12, 0.08], [genX + 0.48, 1.1, genZ + 2.50], trim, world, false);
