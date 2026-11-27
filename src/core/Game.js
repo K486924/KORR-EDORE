@@ -161,6 +161,8 @@ export class Game {
   handleContextInteraction() {
     if (this.inVehicle) {
       this.inVehicle = false;
+      const hud = document.querySelector("#vehicle-hud");
+      if (hud) hud.hidden = true;
       const car = this.renderer.arrivalCar;
       this.renderer.camera.position.set(car.position.x + 1.8, 1.62, car.position.z);
       this.yaw = car.rotation.y;
@@ -172,6 +174,8 @@ export class Game {
     if (!target) return;
     if (target.id === "arrival-car") {
       this.inVehicle = true;
+      const hud = document.querySelector("#vehicle-hud");
+      if (hud) hud.hidden = false;
       this.carSpeed = 0;
       this.yaw = this.renderer.arrivalCar.rotation.y;
       this.pitch = -0.22;
@@ -277,6 +281,12 @@ export class Game {
     this.renderer.camera.lookAt(car.position.x, 1.0, car.position.z);
     const button = document.querySelector("#interact-button");
     if (button) { button.hidden = false; button.textContent = "EXIT VEHICLE · E"; }
+    const hud = document.querySelector("#vehicle-hud");
+    const speed = document.querySelector("#vehicle-speed");
+    const spares = document.querySelector("#spare-count");
+    if (hud) hud.hidden = false;
+    if (speed) speed.textContent = Math.round(Math.abs(this.carSpeed) * 3.6) + " km/h";
+    if (spares) spares.textContent = "SPARES · " + this.spareTires;
   }
 
   isNearGeneratorKey() {
