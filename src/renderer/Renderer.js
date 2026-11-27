@@ -323,6 +323,32 @@ export class Renderer {
     box([1.15, 0.82, 0.72], [genX - 0.35, 0.58, genZ - 0.15], darkMetal);
     box([0.52, 0.12, 0.48], [genX - 0.35, 1.05, genZ - 0.15], wood);
     cylinder(0.07, 0.07, 0.72, [genX - 0.8, 1.65, genZ - 0.75], darkMetal, 8);
+    // Hinged service door and a visible brass padlock.
+    this.generatorDoorPivot = new THREE.Group();
+    this.generatorDoorPivot.position.set(genX + 0.36, 0.05, genZ + 2.42);
+    box([1.05, 2.12, 0.10], [0.53, 1.06, 0], wood, this.generatorDoorPivot);
+    box([0.20, 0.34, 0.12], [0.82, 1.05, 0.08], darkMetal, this.generatorDoorPivot, false);
+    const lockBody = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.08), materials.metal(0xb58b43, 0.8));
+    lockBody.position.set(0.82, 0.86, 0.12); this.generatorDoorPivot.add(lockBody);
+    const lockLoop = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.018, 7, 14, Math.PI), materials.metal(0xb58b43, 0.8));
+    lockLoop.position.set(0.82, 0.99, 0.12); this.generatorDoorPivot.add(lockLoop);
+    world.add(this.generatorDoorPivot);
+    this.generatorDoorOpen = false;
+    this.generatorDoorPosition = { x: genX + 0.9, z: genZ + 2.5 };
+
+    // The uncle's brass generator key rests on his bedroom writing desk.
+    this.generatorKeyMesh = new THREE.Group();
+    const brass = materials.metal(0xc49a4b, 0.82);
+    const keyRing = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.025, 8, 18), brass);
+    keyRing.rotation.x = Math.PI / 2; keyRing.position.set(-3.0, 1.13, -0.72);
+    const keyStem = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.045, 0.045), brass);
+    keyStem.position.set(-2.78, 1.13, -0.72);
+    const keyTooth = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.10, 0.045), brass);
+    keyTooth.position.set(-2.65, 1.08, -0.72);
+    this.generatorKeyMesh.add(keyRing, keyStem, keyTooth);
+    world.add(this.generatorKeyMesh);
+    this.generatorKeyPosition = { x: -2.8, z: -0.72 };
+
 
     // Perimeter fencing: timber posts and rails, with the existing double gate as the entrance.
     const fenceWood = materials.darkWood(0x493a2a);
@@ -595,6 +621,16 @@ export class Renderer {
     this.beamDirection.copy(this.camera.getWorldDirection(new THREE.Vector3()));
     this.flashlight.visible = this.flashlightEnabled;
     this.viewModel.visible = this.flashlightEnabled;
+  }
+
+  setGeneratorKeyCollected(collected) {
+    if (this.generatorKeyMesh) this.generatorKeyMesh.visible = !collected;
+  }
+
+  toggleGeneratorDoor() {
+    this.generatorDoorOpen = !this.generatorDoorOpen;
+    if (this.generatorDoorPivot) this.generatorDoorPivot.rotation.y = this.generatorDoorOpen ? -1.18 : 0;
+    return this.generatorDoorOpen;
   }
 
   toggleGate() {
