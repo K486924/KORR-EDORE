@@ -274,7 +274,7 @@ export class Renderer {
     this.vehicleFleet = createLegacyFleet({
       aimTargets: legacyTargets,
       showToast: message => { this.lastVehicleToast = message; },
-      enterVehicle: () => {}
+      enterVehicle: type => { this.vehicleMountRequest = type; }
     });
     const { sedan, truck, bike } = this.vehicleFleet;
     sedan.position.set(-5.0, 0, 12.8);
@@ -759,18 +759,21 @@ export class Renderer {
       if (this.scene.fog?.color) this.scene.fog.color.copy(this.scene.background);
       if (this.clouds) this.clouds.forEach((cloud, i) => { cloud.position.x += dt * (0.18 + i * 0.012); if (cloud.position.x > 55) cloud.position.x = -55; });
     }
-    for (const vehicle of [this.vehicleFleet?.sedan, this.vehicleFleet?.truck]) {
-      const parts = vehicle?.userData?.parts;
-      if (!parts) continue;
-      for (const part of Object.values(parts)) {
-        if (!part?.pivot || typeof part.maxAngle !== "number") continue;
-        const targetAngle = part.open ? part.maxAngle : 0;
-        part.angle += (targetAngle - part.angle) * (1 - Math.exp(-dt * 8));
-        part.pivot.rotation.y = part === parts.hood || part === parts.trunk || part === parts.bonnet ? 0 : part.pivot.rotation.y;
-        if (part === parts.hood || part === parts.trunk || part === parts.bonnet) part.pivot.rotation.x = part.angle;
-        else part.pivot.rotation.y = part.angle;
-      }
+    const animateHingedPart = (part, axis = "y", speed = 8) => {
+      if (!part?.pivot || typeof part.maxAngle !== "number") return;
+      const targetAngle = part.open ? part.maxAngle : 0;
+      part.angle += (targetAngle - part.angle) * (1 - Math.exp(-dt * speed));
+      part.pivot.rotation[axis] = part.angle;
+    };
+    const sedanParts = this.vehicleFleet?.sedan?.userData?.parts;
+    if (sedanParts) {
+      for (const [name, part] of Object.entries(sedanParts))
+        animateHingedPart(part, name === "hood" || name === "trunk" ? "x" : "y");
     }
+    const truckData = this.vehicleFleet?.truck?.userData;
+    animateHingedPart(truckData?.bonnetPart, "x");
+    animateHingedPart(truckData?.doorPart, "y");
+    animateHingedPart(truckData?.shutterPart, "x", 5);
     if (this.houseDoors) {
       const doorAlpha = 1 - Math.exp(-dt * 7.5);
       for (const door of this.houseDoors) {
