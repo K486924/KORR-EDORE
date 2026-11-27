@@ -15,7 +15,7 @@ export class Game {
     this.hasGeneratorKey = false;
     this.carSpeed = 0;
     this.spareTires = 1;
-    this.offroadWear = 0;
+    this.offroadWear = 0;\n    this.stamina = 100;\n    this.health = 100;\n    this.sprintHeld = false;\n    this.sprintRegenDelay = 0;
     this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
     this.setupInput(canvas);
@@ -27,7 +27,7 @@ export class Game {
     this.yaw = camera.rotation.y;
     const onKey = (event, down) => {
       const key = event.key.toLowerCase();
-      if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
+      if (key === "shift") this.sprintHeld = down;\n      if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
       if (down && !event.repeat && key === "e") this.handleContextInteraction();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
         event.preventDefault();
@@ -83,6 +83,24 @@ export class Game {
       });
     }
 
+    const sprintButton = document.querySelector("#sprint-button");
+    if (sprintButton) {
+      const setSprint = value => {
+        this.sprintHeld = value;
+        sprintButton.classList.toggle("is-held", value);
+        sprintButton.setAttribute("aria-pressed", String(value));
+      };
+      sprintButton.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        sprintButton.setPointerCapture(event.pointerId);
+        setSprint(true);
+      });
+      for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
+        sprintButton.addEventListener(type, () => setSprint(false));
+      window.addEventListener("blur", () => setSprint(false));
+    }
+
     document.querySelectorAll("[data-move]").forEach(button => {
       const direction = button.dataset.move;
       const set = value => {
@@ -127,7 +145,7 @@ export class Game {
     const strafe = (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) +
       (this.keys.has("a") || this.keys.has("arrowleft") ? -1 : 0) + this.move.x;
     const length = Math.hypot(forward, strafe) || 1;
-    const speed = PLAYER_CONFIG.moveSpeed * delta / length;
+    const moving = Math.abs(forward) + Math.abs(strafe) > 0.01;\n    const canSprint = this.sprintHeld && moving && this.stamina > 0.5;\n    const sprintMultiplier = canSprint ? 1.7 : 1;\n    const speed = PLAYER_CONFIG.moveSpeed * sprintMultiplier * delta / length;\n    if (canSprint) {\n      this.stamina = Math.max(0, this.stamina - 28 * delta);\n      this.sprintRegenDelay = 0.65;\n    } else {\n      this.sprintRegenDelay = Math.max(0, this.sprintRegenDelay - delta);\n      if (this.sprintRegenDelay <= 0) this.stamina = Math.min(100, this.stamina + 19 * delta);\n    }\n    this.updatePlayerStatus();
     const camera = this.renderer.camera;
     const startX = camera.position.x;
     const startZ = camera.position.z;
@@ -151,6 +169,19 @@ export class Game {
     this.updateInteractionUI();
     this.lookDelta.yaw = 0;
     this.lookDelta.pitch = 0;
+  }
+
+  updatePlayerStatus() {
+    const staminaFill = document.querySelector("#stamina-fill");
+    const staminaValue = document.querySelector("#stamina-value");
+    const healthFill = document.querySelector("#health-fill");
+    const healthValue = document.querySelector("#health-value");
+    if (staminaFill) staminaFill.style.width = this.stamina + "%";
+    if (staminaValue) staminaValue.textContent = Math.ceil(this.stamina) + "%";
+    if (healthFill) healthFill.style.width = this.health + "%";
+    if (healthValue) healthValue.textContent = Math.ceil(this.health) + "%";
+    const sprintButton = document.querySelector("#sprint-button");
+    if (sprintButton) sprintButton.disabled = this.stamina <= 0.5;
   }
 
   isNearCar() {
