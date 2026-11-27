@@ -106,96 +106,186 @@ export class Renderer {
     this.levelRoot = new THREE.Group();
     this.scene.add(this.levelRoot);
     const world = this.levelRoot;
-    const wallTex = makeNoiseTexture("#343a36", "#c0b69a");
-    const floorTex = makeNoiseTexture("#242827", "#8d8878");
-    const plaster = new THREE.MeshStandardMaterial({ map: wallTex, color: 0x777b70, roughness: 0.96 });
-    const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: 0x77756b, roughness: 0.9 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x171d1b, roughness: 0.94 });
-    const trim = new THREE.MeshStandardMaterial({ color: 0x393b34, roughness: 0.86 });
-    const doorMat = new THREE.MeshStandardMaterial({ color: 0x292b27, roughness: 0.82 });
-    const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x252b28, roughness: 1 });
-    const metal = new THREE.MeshStandardMaterial({ color: 0x555b55, metalness: 0.62, roughness: 0.5 });
 
-    // Narrow residential passage: deliberately imperfect, not a clean game corridor.
-    this.box(world, [5.8, 0.22, 39], [0, -0.12, -10], floorMat);
-    this.box(world, [5.8, 0.18, 39], [0, 3.45, -10], ceilingMat, false);
-    // Build visible wall geometry from the exact same solid cells used by collision.
-    const wallGeometry = new THREE.BoxGeometry(GRID.cellSize, 3.5, GRID.cellSize);
-    const wallInstances = new THREE.InstancedMesh(wallGeometry, plaster, SOLID_CELLS.length);
-    const wallMatrix = new THREE.Matrix4();
-    SOLID_CELLS.forEach((cell, index) => {
-      const center = cellCenter(cell.x, cell.z);
-      wallMatrix.makeTranslation(center.x, 1.62, center.z);
-      wallInstances.setMatrixAt(index, wallMatrix);
-    });
-    wallInstances.instanceMatrix.needsUpdate = true;
-    wallInstances.castShadow = true;
-    wallInstances.receiveShadow = true;
-    world.add(wallInstances);
+    // A bright, quiet afternoon. The house should feel like somewhere people
+    // would genuinely want to spend a weekend.
+    this.scene.background = new THREE.Color(0xc4d3d0);
+    this.scene.fog = new THREE.Fog(0xc4d3d0, 42, 115);
+    this.renderer.toneMappingExposure = 1.12;
 
-    // Skirting and ceiling seams.
-    for (const x of [-2.77, 2.77]) {
-      this.box(world, [0.06, 0.22, 38.5], [x, 0.12, -10], trim, false);
-      this.box(world, [0.08, 0.12, 38.5], [x * 0.985, 3.32, -10], dark, false);
+    const mat = (color, roughness = 0.9, extra = {}) =>
+      new THREE.MeshStandardMaterial({ color, roughness, ...extra });
+    const plaster = mat(0xd7cbb3);
+    const stone = mat(0x827d6d);
+    const roofMat = mat(0x424b43);
+    const wood = mat(0x573c2b);
+    const trim = mat(0xf0e5d0);
+    const darkMetal = mat(0x303a36, 0.55, { metalness: 0.65 });
+    const grass = mat(0x55734a);
+    const pathMat = mat(0xb3a48a);
+    const glass = mat(0xffdca1, 0.28, { emissive: 0x8b6331, emissiveIntensity: 0.28 });
+    const leafMats = [mat(0x3d633f), mat(0x527747), mat(0x647d4c)];
+
+    const box = (size, position, material, parent = world, cast = true) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+      mesh.position.set(...position);
+      mesh.castShadow = cast;
+      mesh.receiveShadow = true;
+      parent.add(mesh);
+      return mesh;
+    };
+    const cylinder = (radiusTop, radiusBottom, height, position, material, segments = 12) => {
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments), material);
+      mesh.position.set(...position);
+      mesh.castShadow = true;
+      world.add(mesh);
+      return mesh;
+    };
+
+    // Grounds and the broad stone drive.
+    box([180, 0.25, 180], [0, -0.2, -35], grass, world, false);
+    box([5.2, 0.035, 31], [0, -0.045, 1.5], pathMat, world, false);
+    box([22, 0.04, 7], [0, -0.04, 17], pathMat, world, false);
+    box([19, 0.05, 3.2], [0, -0.01, -0.1], pathMat, world, false);
+
+    // The farmhouse: a broad two-storey country home, not a horror corridor.
+    box([16, 0.35, 15.5], [0, 0.0, -6.25], stone);
+    box([15.8, 0.16, 15.25], [0, 0.25, -6.25], mat(0x9b927f), world, false);
+    const wallY = 1.98;
+    const wallH = 3.45;
+    // Front wall is split around the open double-door entrance.
+    box([6.65, wallH, 0.42], [-4.675, wallY, 1.5], plaster);
+    box([6.65, wallH, 0.42], [4.675, wallY, 1.5], plaster);
+    box([0.42, wallH, 15.5], [-7.9, wallY, -6.25], plaster);
+    box([0.42, wallH, 15.5], [7.9, wallY, -6.25], plaster);
+    box([16.2, wallH, 0.42], [0, wallY, -14.0], plaster);
+    // Upper floor band and a shallow, pitched roof.
+    box([16.25, 0.24, 15.8], [0, 3.68, -6.25], trim);
+    const roofLeft = box([8.9, 0.34, 17.2], [-4.0, 4.25, -6.25], roofMat);
+    roofLeft.rotation.z = -0.32;
+    const roofRight = box([8.9, 0.34, 17.2], [4.0, 4.25, -6.25], roofMat);
+    roofRight.rotation.z = 0.32;
+    box([0.42, 0.5, 17.4], [0, 5.0, -6.25], roofMat);
+
+    // Front porch, open double doors and welcoming windows.
+    box([5.2, 0.22, 2.4], [0, 0.32, 2.55], stone);
+    for (const x of [-2.15, 2.15]) {
+      box([0.24, 3.0, 0.24], [x, 1.8, 2.95], trim);
+      box([0.28, 0.22, 0.28], [x, 3.32, 2.95], stone);
     }
-
-    // Repeating doors, each with slightly different proportions and details.
-    for (let i = 0; i < 6; i++) {
-      const z = 4 - i * 5.8;
-      for (const side of [-1, 1]) {
-        const x = side * 2.78;
-        const door = this.box(world, [0.10, 2.35 + (i % 2) * 0.12, 1.18], [x, 1.18, z], doorMat);
-        door.rotation.y = side < 0 ? 0.015 : -0.015;
-        this.box(world, [0.13, 0.12, 1.42], [x, 2.43, z], trim, false);
-        this.box(world, [0.13, 2.5, 0.12], [x, 1.22, z - 0.65], trim, false);
-        this.box(world, [0.13, 2.5, 0.12], [x, 1.22, z + 0.65], trim, false);
-        const knob = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), metal);
-        knob.position.set(side * 2.67, 1.05, z + (side > 0 ? -0.35 : 0.35));
-        world.add(knob);
-        // A dark recess behind the door frame.
-        this.box(world, [0.025, 2.18, 0.94], [side * 2.66, 1.16, z], dark, false);
-      }
-    }
-
-    // A distant doorway that is subtly too tall.
-    this.box(world, [1.65, 2.95, 0.16], [0, 1.48, -27.8], dark);
-    this.box(world, [0.12, 3.2, 0.2], [-0.88, 1.58, -27.7], trim, false);
-    this.box(world, [0.12, 3.2, 0.2], [0.88, 1.58, -27.7], trim, false);
-    this.box(world, [1.9, 0.12, 0.2], [0, 3.12, -27.7], trim, false);
-
-    // Water stains, exposed pipes and small architectural irregularities.
-    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x303a37, metalness: 0.72, roughness: 0.58 });
+    box([5.0, 0.2, 0.28], [0, 3.32, 2.95], trim);
     for (const side of [-1, 1]) {
-      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 37, 8), pipeMat);
-      pipe.position.set(side * 2.55, 2.72, -10);
-      world.add(pipe);
-      for (let i = 0; i < 13; i++) {
-        const stain = new THREE.Mesh(
-          new THREE.BoxGeometry(0.018, 0.45 + Math.random() * 1.1, 0.12 + Math.random() * 0.22),
-          new THREE.MeshStandardMaterial({ color: 0x202b27, transparent: true, opacity: 0.22, roughness: 1 })
-        );
-        stain.position.set(side * (2.775 + Math.random() * 0.004), 0.6 + Math.random() * 2.4, 6 - Math.random() * 34);
-        world.add(stain);
+      const door = box([1.05, 2.65, 0.14], [side * 0.62, 1.65, 1.48], wood);
+      door.rotation.y = side * 0.55;
+      box([0.78, 1.75, 0.035], [side * 0.62, 1.75, 1.39], mat(0x76563b), world, false);
+      cylinder(0.035, 0.035, 0.04, [side * 0.22, 1.5, 1.31], darkMetal, 8).rotation.z = Math.PI / 2;
+    }
+    // Front windows with cream frames and warm glass.
+    for (const x of [-5.0, -3.2, 3.2, 5.0]) {
+      box([1.15, 1.35, 0.12], [x, 2.05, 1.25], trim, world, false);
+      box([0.92, 1.12, 0.08], [x, 2.05, 1.17], glass, world, false);
+      box([0.07, 1.12, 0.08], [x, 2.05, 1.1], wood, world, false);
+      box([0.92, 0.07, 0.08], [x, 2.05, 1.1], wood, world, false);
+    }
+    // Side windows give the mansion depth from the approach.
+    for (const z of [-2.2, -8.3, -11.2]) {
+      for (const side of [-1, 1]) {
+        box([0.12, 1.25, 1.45], [side * 7.68, 2.0, z], trim, world, false);
+        box([0.08, 1.02, 1.2], [side * 7.6, 2.0, z], glass, world, false);
       }
     }
-
-    // Ceiling fixtures with restrained, cold light and occasional flicker.
-    world.add(new THREE.HemisphereLight(0x9caeaa, 0x171a17, 0.055));
-    world.add(new THREE.AmbientLight(0x71817c, 0.025));
-    for (let i = 0; i < 5; i++) {
-      const z = 5 - i * 7;
-      this.box(world, [0.78, 0.045, 0.22], [0, 3.32, z], new THREE.MeshStandardMaterial({
-        color: 0x899b91, emissive: 0x61786d, emissiveIntensity: 0.22
-      }), false);
+    // A subtle balcony above the entrance.
+    box([5.2, 0.18, 1.1], [0, 3.95, 2.0], stone);
+    box([5.2, 0.12, 0.1], [0, 4.55, 2.5], trim, world, false);
+    for (let x = -2.4; x <= 2.41; x += 0.6) {
+      box([0.055, 0.58, 0.055], [x, 4.27, 2.5], trim, world, false);
     }
 
-    // One crooked ceiling panel and a small floor obstruction give the space scale.
-    const panel = this.box(world, [1.25, 0.07, 1.7], [1.1, 3.28, -13.5], trim);
-    panel.rotation.z = 0.035;
-    const debris = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.16, 0.36), dark);
-    debris.position.set(-1.25, 0.02, -5.2);
-    debris.rotation.y = 0.45;
-    world.add(debris);
+    // Gate pillars and a pair of dark iron swing gates.
+    for (const x of [-3.15, 3.15]) {
+      box([0.72, 2.8, 0.72], [x, 1.4, 8.4], stone);
+      box([0.92, 0.22, 0.92], [x, 2.88, 8.4], trim);
+      box([0.55, 0.18, 0.55], [x, 3.08, 8.4], stone);
+    }
+    for (const side of [-1, 1]) {
+      const gate = new THREE.Group();
+      gate.position.set(side * 3.15, 0.18, 8.4);
+      const leafWidth = 3.0;
+      box([leafWidth, 0.16, 0.14], [-side * 1.5, 2.0, 0], darkMetal, gate);
+      box([leafWidth, 0.16, 0.14], [-side * 1.5, 0.35, 0], darkMetal, gate);
+      box([0.14, 1.75, 0.14], [-side * 2.95, 1.15, 0], darkMetal, gate);
+      box([0.14, 1.75, 0.14], [-side * 0.05, 1.15, 0], darkMetal, gate);
+      for (let i = 1; i < 12; i++) {
+        box([0.055, 1.55, 0.07], [-side * (i * 0.25), 1.17, 0], darkMetal, gate);
+      }
+      world.add(gate);
+    }
+
+    // A parked family saloon, ready for the arrival sequence to be added.
+    const car = new THREE.Group();
+    const carPaint = mat(0x354c50, 0.38, { metalness: 0.48 });
+    const tyre = mat(0x171a19, 0.95);
+    box([2.0, 0.62, 4.05], [0, 0.82, 0], carPaint, car);
+    box([1.72, 0.78, 2.05], [0, 1.43, -0.22], mat(0x263c40, 0.32, { metalness: 0.3 }), car);
+    box([1.55, 0.52, 1.82], [0, 1.48, -0.24], mat(0x8ea6a5, 0.25, { transparent: true, opacity: 0.7 }), car, false);
+    box([1.82, 0.12, 0.12], [0, 0.98, -2.04], trim, car, false);
+    for (const x of [-0.83, 0.83]) {
+      for (const z of [-1.35, 1.35]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.2, 16), tyre);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(x, 0.48, z);
+        car.add(wheel);
+      }
+      box([0.18, 0.22, 0.12], [x, 0.9, -2.08], mat(0xf3d9a2, 0.4, { emissive: 0x9b7138, emissiveIntensity: 0.2 }), car, false);
+    }
+    car.position.set(-5.0, 0, 12.8);
+    car.rotation.y = 0.08;
+    world.add(car);
+    this.arrivalCar = car;
+
+    // Garden beds, low hedges, lanterns and mature trees around the property.
+    for (const side of [-1, 1]) {
+      box([1.2, 0.42, 10], [side * 5.1, 0.18, 1.5], mat(0x3c5b36));
+      for (let i = 0; i < 5; i++) {
+        const bush = new THREE.Mesh(new THREE.SphereGeometry(0.42 + (i % 2) * 0.08, 10, 8), leafMats[i % leafMats.length]);
+        bush.position.set(side * (4.9 + (i % 2) * 0.35), 0.45, -2.2 + i * 1.65);
+        bush.scale.y = 0.72;
+        world.add(bush);
+      }
+      for (const z of [-5.0, 3.5, 12.0]) {
+        cylinder(0.055, 0.075, 1.0, [side * 6.5, 0.5, z], darkMetal, 8);
+        const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), mat(0xffe2a9, 0.3, { emissive: 0xffc66f, emissiveIntensity: 0.5 }));
+        lamp.position.set(side * 6.5, 1.12, z);
+        world.add(lamp);
+      }
+    }
+    const makeTree = (x, z, scale = 1) => {
+      cylinder(0.22 * scale, 0.34 * scale, 3.2 * scale, [x, 1.6 * scale, z], mat(0x594832), 9);
+      for (let i = 0; i < 3; i++) {
+        const crown = new THREE.Mesh(new THREE.SphereGeometry((1.35 - i * 0.12) * scale, 11, 9), leafMats[(i + Math.round(x)) % leafMats.length]);
+        crown.position.set(x + (i - 1) * 0.25 * scale, (3.25 + i * 0.65) * scale, z + (i % 2) * 0.25 * scale);
+        crown.castShadow = true;
+        world.add(crown);
+      }
+    };
+    [[-13,-5,1.15],[13,-8,1.25],[-15,8,1.1],[15,10,1.2],[-10,-22,1.4],[11,-24,1.35],[-20,2,1.5],[20,-2,1.45],[-8,18,1.1],[9,20,1.1]].forEach(p => makeTree(...p));
+
+    // Soft daylight and a little warm light inside the front rooms.
+    this.scene.add(new THREE.HemisphereLight(0xe8f2ee, 0x65704f, 1.55));
+    this.scene.add(new THREE.AmbientLight(0xffe7c6, 0.42));
+    const sun = new THREE.DirectionalLight(0xffe5bd, 2.0);
+    sun.position.set(-18, 28, 16);
+    sun.castShadow = false;
+    this.scene.add(sun);
+    for (const x of [-4.2, 4.2]) {
+      const windowGlow = new THREE.PointLight(0xffd59b, 2.0, 5, 2);
+      windowGlow.position.set(x, 2.1, 0.8);
+      world.add(windowGlow);
+    }
+
+    // Keep the spawn outside the gate, facing the house and the parked car.
+    this.camera.position.set(0, 1.62, 15.5);
+    this.camera.rotation.set(0, 0, 0, "YXZ");
   }
 
   buildViewModel() {
