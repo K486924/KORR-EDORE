@@ -113,6 +113,13 @@ export class Game {
   }
 
   update(delta) {
+    if (this.inVehicle) {
+      this.updateVehicle(delta);
+      this.updateInteractionUI();
+      this.lookDelta.yaw = 0;
+      this.lookDelta.pitch = 0;
+      return;
+    }
     const forward = (this.keys.has("w") || this.keys.has("arrowup") ? -1 : 0) +
       (this.keys.has("s") || this.keys.has("arrowdown") ? 1 : 0) + this.move.z;
     const strafe = (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) +
@@ -246,6 +253,12 @@ export class Game {
   updateInteractionUI() {
     const button = document.querySelector("#interact-button");
     if (!button) return;
+    if (this.inVehicle) {
+      button.hidden = false;
+      button.textContent = "EXIT VEHICLE · E";
+      button.setAttribute("aria-label", "Exit vehicle");
+      return;
+    }
     const carNearby = this.isNearCar();
     const gateNearby = this.isNearGate();
     const keyNearby = this.isNearGeneratorKey();
