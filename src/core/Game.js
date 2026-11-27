@@ -311,6 +311,18 @@ export class Game {
       }
       return;
     }
+    if (target.id === "living-room-mat") {
+      if (this.storyStage < 6) {
+        this.showGameToast("The mat is worn thin in the middle. Something may be hidden beneath it.");
+        return;
+      }
+      const key = this.renderer.interiorLevel?.ritualKeys?.["ritual-key-mat"];
+      if (key && !this.ritualKeysFound.has("ritual-key-mat")) {
+        key.visible = true;
+        this.showGameToast("You lift the mat. A brass key is pressed into the underside.");
+      }
+      return;
+    }
     if (target.id === "bedroom-drawer" || target.id === "reception-drawer") {
       if (this.storyStage < 6) {
         this.showGameToast("The drawers can wait. First, find the book that appeared after the generator started.");
@@ -370,7 +382,7 @@ export class Game {
       this.renderer.startChillaSequence();
       this.storyStage = 9;
       this.updateStoryUI();
-      this.showGameToast("You step into the salt circle. Somewhere below, the generator stops. A voice answers from inside the walls.");
+      this.showGameToast("You step into the salt circle. The air turns cold. Three slow knocks answer from inside the walls.");
       this.playDistantKnocks();
       return;
     }
@@ -431,8 +443,6 @@ export class Game {
       this.renderer.storyRitualBook.visible = false;
       if (this.renderer.interiorLevel?.ritualBook) this.renderer.interiorLevel.ritualBook.visible = false;
       this.storyStage = 6;
-      const matKey = this.renderer.interiorLevel?.ritualKeys?.["ritual-key-mat"];
-      if (matKey) matKey.visible = true;
       this.updateStoryUI();
       this.showGameToast("The book opens by itself. A page is marked: THE CHILLA MUST BEGIN AT 12:00. Three keys. Three locks.");
       return;
@@ -638,6 +648,8 @@ export class Game {
     }
     if (target.id === "interior-exit") {
       label = this.renderer.interiorLevel?.exitState?.open ? "STEP OUTSIDE · E" : "OPEN FRONT DOOR · E";
+    } else if (target.id === "living-room-mat") {
+      label = this.ritualKeysFound.has("ritual-key-mat") ? "MAT ALREADY SEARCHED" : "LIFT LIVING-ROOM MAT · E";
     } else if (target.id === "bedroom-drawer") {
       label = this.ritualKeysFound.has("ritual-key-bedroom") ? "EMPTY DRAWER" : "SEARCH BEDROOM DRAWER · E";
     } else if (target.id === "reception-drawer") {
