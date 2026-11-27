@@ -140,7 +140,7 @@ async function launchMainStory() {
   if (loadingStatus) loadingStatus.textContent = "Preparing the farmhouse and its interior…";
   try {
     await fullscreenRequest;
-    const { Game } = await import("./core/Game.js?build=13");
+    const { Game } = await import("./core/Game.js?build=14");
     game = new Game(canvas);
     game.start();
     document.body.classList.add("game-active");
