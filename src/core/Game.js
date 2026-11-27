@@ -12,6 +12,7 @@ export class Game {
     this.yaw = 0;
     this.pitch = 0;
     this.inVehicle = false;
+    this.hasGeneratorKey = false;
     this.carSpeed = 0;
     this.lookDelta = { yaw: 0, pitch: 0 };
     this.frame = this.frame.bind(this);
@@ -165,6 +166,21 @@ export class Game {
       this.pitch = -0.22;
       return;
     }
+    if (this.isNearGeneratorKey()) {
+      this.hasGeneratorKey = true;
+      this.renderer.setGeneratorKeyCollected(true);
+      this.showGameToast("Brass key collected. It fits the generator room padlock.");
+      return;
+    }
+    if (this.isNearGeneratorDoor()) {
+      if (!this.hasGeneratorKey) {
+        this.showGameToast("Locked. Find the brass key in the uncle's bedroom.");
+      } else {
+        const open = this.renderer.toggleGeneratorDoor();
+        this.showGameToast(open ? "Generator room unlocked." : "Generator room secured.");
+      }
+      return;
+    }
     if (this.isNearGate()) this.syncGateButton(this.renderer.toggleGate());
   }
 
@@ -197,6 +213,27 @@ export class Game {
     if (button) { button.hidden = false; button.textContent = "EXIT VEHICLE · E"; }
   }
 
+  isNearGeneratorKey() {
+    if (this.hasGeneratorKey) return false;
+    const p = this.renderer.generatorKeyPosition;
+    return !!p && Math.hypot(this.renderer.camera.position.x - p.x, this.renderer.camera.position.z - p.z) < 2.0;
+  }
+
+  isNearGeneratorDoor() {
+    const p = this.renderer.generatorDoorPosition;
+    return !!p && Math.hypot(this.renderer.camera.position.x - p.x, this.renderer.camera.position.z - p.z) < 2.8;
+  }
+
+  showGameToast(message) {
+    const status = document.querySelector("#boot-status");
+    if (status) {
+      status.textContent = message;
+      status.style.opacity = "1";
+      window.clearTimeout(this.toastTimer);
+      this.toastTimer = window.setTimeout(() => { status.style.opacity = ""; }, 2600);
+    }
+  }
+
   isNearGate() {
     const camera = this.renderer.camera;
     return Math.hypot(camera.position.x, camera.position.z - 8.4) < 3.3;
@@ -207,10 +244,18 @@ export class Game {
     if (!button) return;
     const carNearby = this.isNearCar();
     const gateNearby = this.isNearGate();
-    button.hidden = !carNearby && !gateNearby;
+    const keyNearby = this.isNearGeneratorKey();
+    const generatorNearby = this.isNearGeneratorDoor();
+    button.hidden = !carNearby && !gateNearby && !keyNearby && !generatorNearby;
     if (carNearby) {
       button.textContent = "ENTER VEHICLE · E";
       button.setAttribute("aria-label", "Enter the car");
+    } else if (keyNearby) {
+      button.textContent = "TAKE BRASS KEY · E";
+      button.setAttribute("aria-label", "Take the generator room key");
+    } else if (generatorNearby) {
+      button.textContent = this.hasGeneratorKey ? "OPEN GENERATOR ROOM · E" : "LOCKED · FIND KEY";
+      button.setAttribute("aria-label", "Generator room door");
     } else if (gateNearby) {
       const open = this.renderer.gateTargetOpen > 0.5;
       button.textContent = open ? "CLOSE GATE · E" : "OPEN GATE · E";
