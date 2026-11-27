@@ -219,12 +219,14 @@ export class Renderer {
     box([1.72, 0.78, 2.05], [0, 1.43, -0.22], mat(0x263c40, 0.32, { metalness: 0.3 }), car);
     box([1.55, 0.52, 1.82], [0, 1.48, -0.24], mat(0x8ea6a5, 0.25, { transparent: true, opacity: 0.7 }), car, false);
     box([1.82, 0.12, 0.12], [0, 0.98, -2.04], trim, car, false);
+    this.carWheels = [];
     for (const x of [-0.83, 0.83]) {
       for (const z of [-1.35, 1.35]) {
         const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.2, 16), tyre);
         wheel.rotation.z = Math.PI / 2;
         wheel.position.set(x, 0.48, z);
-        car.add(wheel);\n        this.carWheels.push(wheel);
+        car.add(wheel);
+        this.carWheels.push(wheel);
       }
       box([0.18, 0.22, 0.12], [x, 0.9, -2.08], mat(0xf3d9a2, 0.4, { emissive: 0x9b7138, emissiveIntensity: 0.2 }), car, false);
     }
