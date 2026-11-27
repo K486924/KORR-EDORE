@@ -4,7 +4,7 @@ import { LIGHT_CONFIG, FEATURE_CONFIG } from "../config/lighting.js";
 import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
-import { InteractionSystem } from "../interaction/InteractionSystem.js?v=5";
+import { InteractionSystem } from "../interaction/InteractionSystem.js?v=6";
 
 export class Renderer {
   constructor(canvas) {
@@ -268,6 +268,7 @@ export class Renderer {
     // A parked family saloon, ready for the arrival sequence to be added.
     // Detailed models ported from the original KORR EDORE core-world build.
     const legacyTargets = [];
+    this.legacyVehicleTargets = legacyTargets;
     this.vehicleFleet = createLegacyFleet({
       aimTargets: legacyTargets,
       showToast: message => { this.lastVehicleToast = message; },
@@ -283,7 +284,7 @@ export class Renderer {
     world.add(sedan, truck, bike);
     this.arrivalCar = sedan;
     this.carWheels = sedan.userData.wheels.map(w => w.steerGrp);
-    this.carTireStates = sedan.userData.wheels;
+    this.carTireStates = sedan.userData.wheels.map((wheel, index) => ({ ...wheel, label: ["Front left", "Front right", "Rear left", "Rear right"][index] }));
     this.interactions.register(sedan, { id: "arrival-car", label: "ENTER VEHICLE", maxDistance: 4.2 });
     legacyTargets.forEach((target, index) => {
       if (!target.mesh) return;
@@ -755,6 +756,18 @@ export class Renderer {
       this.scene.background.setRGB(0.008 + daylight * 0.76, 0.012 + daylight * 0.82, 0.025 + daylight * 0.78);
       if (this.scene.fog?.color) this.scene.fog.color.copy(this.scene.background);
       if (this.clouds) this.clouds.forEach((cloud, i) => { cloud.position.x += dt * (0.18 + i * 0.012); if (cloud.position.x > 55) cloud.position.x = -55; });
+    }
+    for (const vehicle of [this.vehicleFleet?.sedan, this.vehicleFleet?.truck]) {
+      const parts = vehicle?.userData?.parts;
+      if (!parts) continue;
+      for (const part of Object.values(parts)) {
+        if (!part?.pivot || typeof part.maxAngle !== "number") continue;
+        const targetAngle = part.open ? part.maxAngle : 0;
+        part.angle += (targetAngle - part.angle) * (1 - Math.exp(-dt * 8));
+        part.pivot.rotation.y = part === parts.hood || part === parts.trunk || part === parts.bonnet ? 0 : part.pivot.rotation.y;
+        if (part === parts.hood || part === parts.trunk || part === parts.bonnet) part.pivot.rotation.x = part.angle;
+        else part.pivot.rotation.y = part.angle;
+      }
     }
     if (this.houseDoors) {
       const doorAlpha = 1 - Math.exp(-dt * 7.5);
