@@ -318,6 +318,7 @@ export class Game {
       }
       const key = this.renderer.interiorLevel?.ritualKeys?.["ritual-key-mat"];
       if (key && !this.ritualKeysFound.has("ritual-key-mat")) {
+        this.renderer.liftLivingRoomMat();
         key.visible = true;
         this.showGameToast("You lift the mat. A brass key is pressed into the underside.");
       }
