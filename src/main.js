@@ -60,7 +60,7 @@ function showMenuScreen(name) {
   document.querySelector("#menu-" + name)?.classList.add("is-active");
 }
 document.querySelectorAll("[data-menu]").forEach(button => {
-  button.addEventListener("click", () => showMenuScreen(button.dataset.menu));
+  button.addEventListener("click", () => { startAtmosphereMusic(); showMenuScreen(button.dataset.menu); });
 });
 
 function startAtmosphereMusic() {
