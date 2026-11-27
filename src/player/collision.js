@@ -1,3 +1,4 @@
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 import { GRID, SOLID_CELL_KEYS } from "../level/layout.js";
 
 const HALF_CELL = GRID.cellSize * 0.5;
