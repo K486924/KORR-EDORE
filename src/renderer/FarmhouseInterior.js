@@ -32,21 +32,24 @@ export function createFarmhouseInterior(scene, interactions) {
   box([15.25, wallH, thick], [0, wallY, -13.82], plaster, root, true);
 
   // Internal room dividers leave proper doorways and a clear central hall.
-  box([thick, wallH, 5.2], [-2.25, wallY, -2.55], plaster, root, true);
-  box([thick, wallH, 6.2], [-2.25, wallY, -10.65], plaster, root, true);
-  box([thick, wallH, 3.0], [2.25, wallY, -3.55], plaster, root, true);
-  box([thick, wallH, 5.7], [2.25, wallY, -10.95], plaster, root, true);
-  box([4.95, wallH, thick], [-5.05, wallY, -4.1], plaster, root, true);
-  box([4.95, wallH, thick], [5.05, wallY, -4.1], plaster, root, true);
+  for (const x of [-2.25, 2.25]) {
+    box([thick, wallH, 1.5], [x, wallY, -0.9], plaster, root, true);
+    box([thick, wallH, 1.5], [x, wallY, -4.4], plaster, root, true);
+    box([thick, wallH, 1.8], [x, wallY, -8.5], plaster, root, true);
+    box([thick, wallH, 2.0], [x, wallY, -12.7], plaster, root, true);
+  }
+  for (const x of [-6.65, -3.45, 3.45, 6.65])
+    box([1.75, wallH, thick], [x, wallY, -4.1], plaster, root, true);
   // Door headers frame the openings without blocking them.
   for (const x of [-2.25, 2.25]) box([1.15, 0.22, 0.32], [x, 3.05, -6.0], trim);
 
   // Upper floor with a deliberately open stairwell.
   const upperY = 3.55;
   box([7.6, 0.22, 15.0], [-3.8, upperY, -6.25], floor);
+  box([4.0, 0.22, 15.0], [2.0, upperY, -6.25], floor);
   box([1.6, 0.22, 15.0], [6.8, upperY, -6.25], floor);
-  box([6.0, 0.22, 6.0], [3.0, upperY, -10.75], floor);
-  box([6.0, 0.22, 2.7], [3.0, upperY, -0.35], floor);
+  box([2.0, 0.22, 6.0], [5.0, upperY, -10.75], floor);
+  box([2.0, 0.22, 2.7], [5.0, upperY, -0.35], floor);
   // Upstairs partitions and bedroom openings.
   box([thick, 2.85, 8.4], [-2.15, 5.05, -9.6], plaster, root, true);
   box([thick, 2.85, 6.0], [2.15, 5.05, -10.8], plaster, root, true);
@@ -131,21 +134,21 @@ export function createFarmhouseInterior(scene, interactions) {
     box([0.72, 0.14, 0.72], [x, 0.68, z], darkWood);
     box([0.72, 0.62, 0.12], [x, 1.0, z + (z < -10 ? -0.28 : 0.28)], fabric);
   }
-  box([3.2, 0.88, 0.72], [5.1, 0.78, -5.4], pale, root, true);
-  box([3.2, 0.10, 0.72], [5.1, 1.25, -5.4], wood);
-  box([2.8, 0.86, 0.58], [5.0, 0.8, -1.65], wood, root, true);
-  box([2.9, 0.10, 0.68], [5.0, 1.28, -1.65], pale);
+  box([1.35, 0.88, 0.72], [3.25, 0.78, -5.4], pale, root, true);
+  box([1.45, 0.10, 0.78], [3.25, 1.25, -5.4], wood);
+  box([2.1, 0.86, 0.58], [3.0, 0.8, -1.65], wood, root, true);
+  box([2.2, 0.10, 0.68], [3.0, 1.28, -1.65], pale);
   const ritualBook = new THREE.Group();
   box([0.48, 0.07, 0.34], [0, 0, 0], darkWood, ritualBook);
   box([0.44, 0.025, 0.31], [0, 0.045, 0], pale, ritualBook);
-  ritualBook.position.set(5.0, 1.40, -1.65); ritualBook.visible = false; root.add(ritualBook);
+  ritualBook.position.set(3.0, 1.40, -1.65); ritualBook.visible = false; root.add(ritualBook);
   interactions.register(ritualBook, { id: "story-ritual-book", label: "TAKE RITUAL BOOK", maxDistance: 2.8, enabled: () => ritualBook.visible });
 
   // Upstairs furniture gives the second floor a real destination, not an empty shell.
   box([2.8, 0.32, 2.0], [-5.0, 4.0, -10.2], wood);
   box([2.65, 0.25, 1.8], [-5.0, 4.28, -10.2], pale);
-  box([2.6, 0.3, 2.0], [5.8, 4.0, -10.3], wood);
-  box([2.45, 0.22, 1.8], [5.8, 4.27, -10.3], fabric);
+  box([1.25, 0.3, 2.0], [6.8, 4.0, -10.3], wood);
+  box([1.15, 0.22, 1.8], [6.8, 4.27, -10.3], fabric);
 
   // Warm ceiling fixtures and window light; no stone finishes or textures.
   for (const [x, z] of [[-5.2, -6.0], [5.0, -8.0], [0, -11.0], [-5.0, -10.0]]) {
@@ -157,13 +160,12 @@ export function createFarmhouseInterior(scene, interactions) {
     window.castShadow = false;
   }
 
-  const floorHeightAt = (x, z) => {
+  const floorHeightAt = (x, z, currentOffset = 0) => {
     if (x > 4.05 && x < 5.95 && z <= stairStartZ && z >= stairEndZ) {
       const t = THREE.MathUtils.clamp((stairStartZ - z) / run, 0, 1);
       return t * rise;
     }
-    if (z < stairEndZ - 0.05 && x > -7.5 && x < 7.5) return rise;
-    return 0;
+    return currentOffset > rise * 0.5 ? rise : 0;
   };
   return { root, solidMeshes, exitState, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
 }
