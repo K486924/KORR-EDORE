@@ -145,7 +145,7 @@ export function createFarmhouseInterior(scene, interactions) {
   const livingMat = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.025, 2.8), fabric);
   livingMat.position.set(-5.0, 0.31, -9.1); root.add(livingMat);
   interactions.register(livingMat, { id: "living-room-mat", label: "LIFT LIVING-ROOM MAT", maxDistance: 2.6 });
-  makeKey("ritual-key-mat", [-5.0, 0.37, -9.1], "TAKE SECOND RITUAL KEY");
+  makeKey("ritual-key-mat", [-5.0, 0.265, -9.1], "TAKE SECOND RITUAL KEY");
 
   const receptionDrawer = new THREE.Group();
   box([0.78, 0.36, 0.52], [1.45, 0.82, -1.65], darkWood, receptionDrawer);
@@ -264,5 +264,5 @@ export function createFarmhouseInterior(scene, interactions) {
     }
     return currentOffset > rise * 0.5 ? rise : 0;
   };
-  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, stairSolidMeshes, exitState, ritualDoor, ritualKeys, ritualChamber, ritualState, bedroomDrawerFront, receptionDrawerFront, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
+  return { root, solidMeshes, groundSolidMeshes, upperSolidMeshes, stairSolidMeshes, exitState, ritualDoor, ritualKeys, ritualChamber, ritualState, livingMat, bedroomDrawerFront, receptionDrawerFront, floorHeightAt, storyDiary: diary, storyPhoto: photo, ritualBook, generatorKey: key };
 }
