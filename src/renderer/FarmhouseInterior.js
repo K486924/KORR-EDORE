@@ -169,9 +169,6 @@ export function createFarmhouseInterior(scene, interactions) {
     interactions.register(leaf, { id: "ritual-room-door", label: "THREE LOCKS · FIND THE KEYS", maxDistance: 3.0 });
   }
   const ritualDoor = { hinges: ritualDoorHinges, open: false, angle: 0 };
-  const ritualState = { started: false, light: null, ring: null };
-  ritualState.light = ritualLight;
-  ritualState.ring = saltRing;
   // A salt circle and unlit candles wait behind the three-lock door.
   const ritualChamber = new THREE.Group();
   const saltRing = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.055, 8, 64), mat(0xe5ddc9));
@@ -179,6 +176,7 @@ export function createFarmhouseInterior(scene, interactions) {
   saltRing.position.set(0, 3.69, -10.65); ritualChamber.add(saltRing);
   const ritualLight = new THREE.PointLight(0x9b2520, 0, 9, 2);
   ritualLight.position.set(0, 4.4, -10.65); ritualChamber.add(ritualLight);
+  const ritualState = { started: false, light: ritualLight, ring: saltRing, chamber: ritualChamber };
   interactions.register(saltRing, { id: "ritual-circle", label: "BEGIN THE CHILLA", maxDistance: 2.8, enabled: () => ritualDoor.open && !ritualChamber.userData.started });
   for (let i = 0; i < 8; i++) {
     const a = i * Math.PI / 4;
@@ -187,7 +185,6 @@ export function createFarmhouseInterior(scene, interactions) {
     wick.position.set(candle.position.x, 4.05, candle.position.z); ritualChamber.add(wick);
   }
   root.add(ritualChamber);
-  ritualState.chamber = ritualChamber;
 
   // Uncle's bedroom: bed, wardrobe, writing desk, diary and brass key.
   box([3.0, 0.34, 2.15], [-5.15, 0.52, -1.35], darkWood);
