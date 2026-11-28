@@ -320,7 +320,7 @@ function buildCargoTruck() {
   makeTruckWheel(-1.16, -1.62, false); makeTruckWheel(1.16, -1.62, false);
   makeTruckWheel(-1.16, -2.55, false); makeTruckWheel(1.16, -2.55, false);
 
-  truck.userData = { bonnetPart, doorPart, doorParts, shutterPart, wheels, headLights, tSpotL, tSpotR, WR: wheelRadius, forwardSign: 1 };
+  truck.userData = { bonnetPart, doorPart, doorParts, shutterPart, wheels, headLights, tailMats: tailLights.map(light => light.material), tSpotL, tSpotR, WR: wheelRadius, forwardSign: 1 };
   return truck;
 }
 
