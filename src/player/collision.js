@@ -7,7 +7,7 @@ function cellIndex(value, origin) {
   return Math.floor((value - origin) / GRID.cellSize);
 }
 
-function resolveAxis(position, radius, axis, extraSolidCells = null) {
+function resolveAxis(position, radius, axis, extraSolidCells = null, collisionInfo = null) {
   const otherAxis = axis === "x" ? "z" : "x";
   const origin = axis === "x" ? GRID.originX : GRID.originZ;
   const otherOrigin = otherAxis === "x" ? GRID.originX : GRID.originZ;
@@ -30,17 +30,19 @@ function resolveAxis(position, radius, axis, extraSolidCells = null) {
         position.x = Math.abs(dx) > 1e-8 ? closestX + Math.sign(dx) * required :
           (Math.abs(position.x - (boxX - HALF_CELL)) < Math.abs((boxX + HALF_CELL) - position.x)
             ? boxX - HALF_CELL - required : boxX + HALF_CELL + required);
+        if (collisionInfo) { collisionInfo.normalX = position.x < boxX ? -1 : 1; collisionInfo.normalZ = 0; }
       } else {
         const required = Math.sqrt(Math.max(0, radius * radius - dx * dx));
         position.z = Math.abs(dz) > 1e-8 ? closestZ + Math.sign(dz) * required :
           (Math.abs(position.z - (boxZ - HALF_CELL)) < Math.abs((boxZ + HALF_CELL) - position.z)
             ? boxZ - HALF_CELL - required : boxZ + HALF_CELL + required);
+        if (collisionInfo) { collisionInfo.normalX = 0; collisionInfo.normalZ = position.z < boxZ ? -1 : 1; }
       }
     }
   }
 }
 
-function resolveMeshCollisions(position, radius, meshes) {
+function resolveMeshCollisions(position, radius, meshes, collisionInfo = null) {
   if (!meshes?.length) return;
   const center = new THREE.Vector3();
   const worldScale = new THREE.Vector3();
@@ -80,8 +82,14 @@ function resolveMeshCollisions(position, radius, meshes) {
       }
       const push = radius - distance;
       const normalLength = Math.max(1e-7, Math.hypot(nx, nz));
-      local.x += nx / normalLength * push;
-      local.z += nz / normalLength * push;
+      const localNormalX = nx / normalLength, localNormalZ = nz / normalLength;
+      if (collisionInfo) {
+        const worldNormal = new THREE.Vector3(localNormalX, 0, localNormalZ).applyQuaternion(worldQuaternion);
+        collisionInfo.normalX = worldNormal.x;
+        collisionInfo.normalZ = worldNormal.z;
+      }
+      local.x += localNormalX * push;
+      local.z += localNormalZ * push;
       const corrected = new THREE.Vector3(local.x, 0, local.z)
         .applyQuaternion(worldQuaternion).add(new THREE.Vector3(boxCenterX, 0, boxCenterZ));
       position.x = corrected.x;
@@ -90,12 +98,13 @@ function resolveMeshCollisions(position, radius, meshes) {
   }
 }
 
-export function moveWithCollisions(position, deltaX, deltaZ, radius, extraSolidCells = null, solidMeshes = null) {
+export function moveWithCollisions(position, deltaX, deltaZ, radius, extraSolidCells = null, solidMeshes = null, collisionInfo = null) {
+  if (collisionInfo) { collisionInfo.normalX = 0; collisionInfo.normalZ = 0; }
   position.x += deltaX;
-  resolveAxis(position, radius, "x", extraSolidCells);
-  resolveMeshCollisions(position, radius, solidMeshes);
+  resolveAxis(position, radius, "x", extraSolidCells, collisionInfo);
+  resolveMeshCollisions(position, radius, solidMeshes, collisionInfo);
   position.z += deltaZ;
-  resolveAxis(position, radius, "z", extraSolidCells);
-  resolveMeshCollisions(position, radius, solidMeshes);
+  resolveAxis(position, radius, "z", extraSolidCells, collisionInfo);
+  resolveMeshCollisions(position, radius, solidMeshes, collisionInfo);
   return position;
 }
