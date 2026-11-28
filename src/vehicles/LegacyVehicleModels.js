@@ -68,11 +68,11 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
     box(car, [0.075, 0.62, 0.09], [side * 0.78, 1.38, 0], trim);
   }
   const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.55), glass);
-  windshield.position.set(0, 1.39, 0.885);
+  windshield.position.set(0, 1.39, 0.84);
   windshield.rotation.x = -0.12;
   car.add(windshield);
   const rearGlass = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.54), glass);
-  rearGlass.position.set(0, 1.39, -0.885);
+  rearGlass.position.set(0, 1.39, -0.84);
   rearGlass.rotation.set(0.12, Math.PI, 0);
   car.add(rearGlass);
 
@@ -82,6 +82,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
   steering.position.set(-0.42, 1.10, 0.57);
   steering.rotation.x = -0.35;
   car.add(steering);
+  aimTargets.push({ mesh: steering, maxDist: 3.4, getLabel: () => "ENTER SEDAN", onInteract: () => enterVehicle("car") });
   for (const x of [-0.43, 0.43]) {
     for (const z of [-0.34, 0.42]) {
       box(car, [0.48, 0.13, 0.48], [x, 0.67, z], leather);
@@ -101,7 +102,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
     box(pivot, [0.055, 0.055, length - 0.07], trim, [side * 0.018, 0.98, centerZ]);
     const window = new THREE.Mesh(new THREE.PlaneGeometry(length - 0.12, 0.43), glass);
     window.rotation.y = side * Math.PI / 2;
-    window.position.set(side * 0.052, 0.76, centerZ);
+    window.position.set(side * 0.039, 0.76, centerZ);
     pivot.add(window);
     box(pivot, [0.045, 0.045, length - 0.10], paint, [side * 0.035, 0.53, centerZ]);
     const handle = box(pivot, [0.035, 0.045, 0.13], chrome,
@@ -252,7 +253,7 @@ function buildCargoTruck() {
     const panel = box(pivot, [0.08, 0.72, 1.38], cabPaint, [0, 0.36, centerZ]);
     const window = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.54), glass);
     window.rotation.y = side * Math.PI / 2;
-    window.position.set(side * 0.052, 1.05, centerZ);
+    window.position.set(side * 0.041, 1.05, centerZ);
     pivot.add(window);
     box(pivot, [0.06, 0.06, 1.28], cabPaint, [0, 1.38, centerZ]);
     box(pivot, [0.06, 0.06, 1.28], dark, [0, 0.74, centerZ]);
