@@ -377,6 +377,7 @@ export class Renderer {
     this.generatorDoorPivot = new THREE.Group();
     this.generatorDoorPivot.position.set(genX + 0.36, 0.05, genZ + 2.42);
     const generatorDoorLeaf = box([1.05, 2.12, 0.10], [0.53, 1.06, 0], wood, this.generatorDoorPivot);
+    this.generatorDoorLeaf = generatorDoorLeaf;
     generatorDoorLeaf.userData.collisionEnabled = true;
     this.solidMeshes.push(generatorDoorLeaf);
     box([0.20, 0.34, 0.12], [0.82, 1.05, 0.08], darkMetal, this.generatorDoorPivot, false);
@@ -970,6 +971,7 @@ export class Renderer {
   toggleGeneratorDoor() {
     this.generatorDoorOpen = !this.generatorDoorOpen;
     if (this.generatorDoorPivot) this.generatorDoorPivot.rotation.y = this.generatorDoorOpen ? -1.18 : 0;
+    if (this.generatorDoorLeaf) this.generatorDoorLeaf.userData.collisionEnabled = !this.generatorDoorOpen;
     return this.generatorDoorOpen;
   }
 
