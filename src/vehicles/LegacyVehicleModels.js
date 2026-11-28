@@ -111,11 +111,8 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
     parts[name] = part;
     aimTargets.push({
       mesh: panel, maxDist: 3.6,
-      getLabel: () => name === "doorFL" && part.open ? "ENTER SEDAN" : (part.open ? "CLOSE " : "OPEN ") + label,
-      onInteract: () => {
-        if (name === "doorFL" && part.open) enterVehicle("car");
-        else { part.open = !part.open; showToast((part.open ? "Opened " : "Closed ") + label); }
-      }
+      getLabel: () => (part.open ? "CLOSE " : "OPEN ") + label,
+      onInteract: () => { part.open = !part.open; showToast((part.open ? "Opened " : "Closed ") + label); }
     });
   }
   createDoor("doorFL", -1, true, "DRIVER DOOR");
@@ -232,6 +229,7 @@ function buildCargoTruck() {
   rearCabGlass.position.set(0, 1.98, 0.735); rearCabGlass.rotation.set(0.05, Math.PI, 0); truck.add(rearCabGlass);
 
   const driverSeat = box(truck, [0.62, 0.62, 0.58], new THREE.Vector3(-0.52, 1.16, 1.34).toArray(), dark);
+  aimTargets.push({ mesh: driverSeat, maxDist: 3.6, getLabel: () => "ENTER TRUCK", onInteract: () => enterVehicle("truck") });
   const steering = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.026, 10, 22), dark);
   steering.position.set(-0.55, 1.55, 2.00); steering.rotation.x = -0.42; truck.add(steering);
 
@@ -262,11 +260,8 @@ function buildCargoTruck() {
     doorParts.push(part);
     aimTargets.push({
       mesh: panel, maxDist: 4.0,
-      getLabel: () => side === -1 && part.open ? "ENTER TRUCK" : (part.open ? "CLOSE " : "OPEN ") + label,
-      onInteract: () => {
-        if (side === -1 && part.open) enterVehicle("truck");
-        else { part.open = !part.open; showToast((part.open ? "Opened " : "Closed ") + label); }
-      }
+      getLabel: () => (part.open ? "CLOSE " : "OPEN ") + label,
+      onInteract: () => { part.open = !part.open; showToast((part.open ? "Opened " : "Closed ") + label); }
     });
   }
   createTruckDoor(-1, "TRUCK DRIVER DOOR");
