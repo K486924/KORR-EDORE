@@ -1,4 +1,4 @@
-import { Renderer } from "../renderer/Renderer.js?build=17";
+import { Renderer } from "../renderer/Renderer.js?build=18";
 import { moveWithCollisions } from "../player/collision.js";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
@@ -21,6 +21,11 @@ export class Game {
     this.ritualKeysFound = new Set();
     this.ritualRoomOpened = false;
     this.chillaStarted = false;
+    this.hauntNight = 0;
+    this.hauntNightTimer = 0;
+    this.nextHauntCue = 0;
+    this.hauntCueIndex = 0;
+    this.hauntAppliedTurnOffset = 0;
     this.carSpeed = 0;
     this.spareTires = 1;
     this.offroadWear = 0;
@@ -155,8 +160,13 @@ export class Game {
       this.lookDelta.pitch = 0;
       return;
     }
+    const hauntInfluence = this.updateHaunting(delta);
+    const turnOffset = hauntInfluence?.turnOffset || 0;
+    this.yaw += turnOffset - this.hauntAppliedTurnOffset;
+    this.hauntAppliedTurnOffset = turnOffset;
+    this.renderer.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
     const forward = (this.keys.has("w") || this.keys.has("arrowup") ? -1 : 0) +
-      (this.keys.has("s") || this.keys.has("arrowdown") ? 1 : 0) + this.move.z;
+      (this.keys.has("s") || this.keys.has("arrowdown") ? 1 : 0) + this.move.z + (hauntInfluence?.forwardDrift || 0);
     const strafe = (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) +
       (this.keys.has("a") || this.keys.has("arrowleft") ? -1 : 0) + this.move.x;
     const length = Math.hypot(forward, strafe) || 1;
@@ -380,7 +390,13 @@ export class Game {
     if (target.id === "ritual-circle") {
       if (!this.ritualRoomOpened || this.chillaStarted) return;
       this.chillaStarted = true;
+      this.hauntNight = 1;
+      this.hauntNightTimer = 0;
+      this.nextHauntCue = 9;
+      this.hauntCueIndex = 0;
+      this.hauntAppliedTurnOffset = 0;
       this.renderer.startChillaSequence();
+      this.renderer.setHauntNight(1);
       this.storyStage = 9;
       this.updateStoryUI();
       this.showGameToast("You step into the salt circle. The air turns cold. Three slow knocks answer from inside the walls.");
@@ -578,8 +594,105 @@ export class Game {
       ["THE CHILLA", "The circle has been disturbed. Find out what answered."]
     ];
     const current = chapters[Math.min(this.storyStage, chapters.length - 1)];
-    title.textContent = current[0];
-    objective.textContent = current[1];
+    title.textContent = this.chillaStarted ? "THE CHILLA · NIGHT " + this.hauntNight : current[0];
+    if (this.chillaStarted) {
+      const hauntObjectives = [
+        "Listen carefully. The knocks are coming from somewhere inside the house.",
+        "Stay near the firelight. Something is moving in the shadows it casts.",
+        "The shadows no longer follow the people or objects that should own them.",
+        "Do not let it turn you around. Something is trying to take control."
+      ];
+      objective.textContent = hauntObjectives[Math.min(Math.max(this.hauntNight - 1, 0), 3)];
+    } else {
+      objective.textContent = current[1];
+    }
+  }
+
+  updateHaunting(delta) {
+    if (!this.chillaStarted) return null;
+    this.hauntNightTimer += delta;
+    const nextNight = Math.floor(this.hauntNightTimer / 240) + 1;
+    if (nextNight !== this.hauntNight) {
+      this.hauntNight = nextNight;
+      this.renderer.setHauntNight(this.hauntNight);
+      this.updateStoryUI();
+      const messages = {
+        2: "NIGHT 2 — Firelight flickers upstairs. The walls are casting shadows that should not be there.",
+        3: "NIGHT 3 — The shadows have stopped following the light.",
+        4: "NIGHT 4 — Something turns when you are not looking. You feel it tug at your thoughts."
+      };
+      this.showGameToast(messages[this.hauntNight] || "Another night passes. It is learning how you move.");
+    }
+    const influence = this.renderer.updateHaunting(delta, this.hauntNightTimer);
+    if (this.hauntNight === 1 && this.hauntNightTimer >= this.nextHauntCue) {
+      if (this.hauntCueIndex % 3 === 0) this.playDistantKnocks();
+      else if (this.hauntCueIndex % 3 === 1) this.playWhisperCue();
+      else this.playFootstepsCue();
+      this.hauntCueIndex++;
+      this.nextHauntCue = this.hauntNightTimer + 23 + Math.random() * 15;
+    }
+    return influence;
+  }
+
+  playWhisperCue() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    try {
+      this.ritualAudioContext ||= new AudioContextClass();
+      const context = this.ritualAudioContext;
+      context.resume().catch(() => {});
+      const length = Math.floor(context.sampleRate * 1.05);
+      const buffer = context.createBuffer(1, length, context.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * 0.55;
+      const source = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      const start = context.currentTime + 0.04;
+      source.buffer = buffer;
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(620, start);
+      filter.frequency.linearRampToValueAtTime(360, start + 0.85);
+      filter.Q.value = 0.8;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(0.035, start + 0.24);
+      gain.gain.linearRampToValueAtTime(0.0001, start + 1.02);
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(context.destination);
+      source.start(start);
+      source.stop(start + 1.06);
+    } catch (error) {
+      console.warn("Whisper cue unavailable:", error);
+    }
+  }
+
+  playFootstepsCue() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    try {
+      this.ritualAudioContext ||= new AudioContextClass();
+      const context = this.ritualAudioContext;
+      context.resume().catch(() => {});
+      const start = context.currentTime + 0.05;
+      for (let i = 0; i < 2; i++) {
+        const at = start + i * 0.48;
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(58, at);
+        oscillator.frequency.exponentialRampToValueAtTime(34, at + 0.13);
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.linearRampToValueAtTime(0.10, at + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.20);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(at);
+        oscillator.stop(at + 0.22);
+      }
+    } catch (error) {
+      console.warn("Footstep cue unavailable:", error);
+    }
   }
 
   playDistantKnocks() {
