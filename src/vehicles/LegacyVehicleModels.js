@@ -45,8 +45,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
   // Chassis and four distinct, non-intersecting exterior body sections.
   box(car, [1.58, 0.16, 3.72], [0, 0.43, 0], trim);
   box(car, [1.84, 0.48, 1.86], [0, 0.77, 0], paint);             // lower body
-  box(car, [1.72, 0.12, 1.02], [0, 1.07, 1.44], paint);          // hood
-  box(car, [1.72, 0.12, 1.00], [0, 1.07, -1.44], paint);         // trunk
+  // Hood and trunk are the hinged panels created below, not duplicate fixed body slabs.
   box(car, [1.90, 0.22, 0.18], [0, 0.43, 2.04], trim);
   box(car, [1.90, 0.22, 0.18], [0, 0.43, -2.04], trim);
   box(car, [0.84, 0.18, 0.07], [0, 0.80, 2.00], chrome);
@@ -78,7 +77,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
   car.add(rearGlass);
 
   // Interior details stay below the glass line.
-  box(car, [1.56, 0.20, 0.22], trim, [0, 1.02, 0.78]);
+  box(car, [1.56, 0.20, 0.22], [0, 1.02, 0.78], trim);
   const steering = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 10, 20), trim);
   steering.position.set(-0.42, 1.10, 0.57);
   steering.rotation.x = -0.35;
@@ -213,7 +212,6 @@ function buildCargoTruck() {
   box(truck, [2.18, 0.14, 1.55], [0, 0.80, 1.55], dark);
   box(truck, [1.72, 0.42, 0.76], [0, 0.91, 2.92], dark);
   box(truck, [0.92, 0.30, 0.55], [0, 1.05, 2.88], dark);
-  box(truck, [2.20, 0.14, 0.86], [0, 1.34, 2.92], cabPaint);        // bonnet top
   box(truck, [2.44, 0.26, 0.18], [0, 0.68, 3.42], dark);            // front bumper
   box(truck, [1.08, 0.42, 0.08], [0, 1.06, 3.39], chrome);          // grille
 
