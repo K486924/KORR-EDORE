@@ -159,8 +159,12 @@ export class Renderer {
     // Separate facade wall colliders leave a 3.0 m clear entrance (well above 1.2x player width).
     solidBox([15.45, wallH, 0.42], [-10.25, wallY, 1.5], plaster);
     solidBox([15.45, wallH, 0.42], [10.25, wallY, 1.5], plaster);
-    solidBox([0.42, wallH, 19.0], [-18.0, wallY, -8.0], plaster);
-    solidBox([0.42, wallH, 19.0], [18.0, wallY, -8.0], plaster);
+    // Broad side-wing openings keep the mansion's wings connected to the main hall.
+    solidBox([0.42, wallH, 7.0], [-18.0, wallY, -2.0], plaster);
+    solidBox([0.42, wallH, 7.0], [-18.0, wallY, -14.0], plaster);
+    // Broad side-wing openings keep the mansion's wings connected to the main hall.
+    solidBox([0.42, wallH, 7.0], [18.0, wallY, -2.0], plaster);
+    solidBox([0.42, wallH, 7.0], [18.0, wallY, -14.0], plaster);
     solidBox([36.2, wallH, 0.42], [0, wallY, -17.5], plaster);
     // Interior partitions are solid only where the plaster actually exists; door gaps stay clear.
     const innerWall = plaster;
@@ -180,8 +184,10 @@ export class Renderer {
     const upperY = 5.05, upperH = 2.55;
     box([35.8, upperH, 0.38], [0, upperY, 1.42], plaster);
     box([35.8, upperH, 0.38], [0, upperY, -17.42], plaster);
-    box([0.38, upperH, 19.0], [-18.0, upperY, -8.0], plaster);
-    box([0.38, upperH, 19.0], [18.0, upperY, -8.0], plaster);
+    box([0.38, upperH, 7.0], [-18.0, upperY, -2.0], plaster);
+    box([0.38, upperH, 7.0], [-18.0, upperY, -14.0], plaster);
+    box([0.38, upperH, 7.0], [18.0, upperY, -2.0], plaster);
+    box([0.38, upperH, 7.0], [18.0, upperY, -14.0], plaster);
     // Upper front windows and a shallow central balcony door.
     for (const x of [-13.0, -8.0, -4.0, 4.0, 8.0, 13.0]) {
       box([1.18, 1.35, 0.10], [x, 5.25, 1.18], trim, world, false);
