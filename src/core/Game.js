@@ -1,4 +1,4 @@
-import { Renderer } from "../renderer/Renderer.js?build=18";
+import { Renderer } from "../renderer/Renderer.js?build=19";
 import { moveWithCollisions } from "../player/collision.js?v=2";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
@@ -15,6 +15,12 @@ export class Game {
     this.currentVehicle = null;
     this.currentVehicleType = null;
     this.vehicleSpeed = 0;
+    this.vehicleYaw = 0;
+    this.vehicleGear = 1;
+    this.vehicleLightsOn = false;
+    this.vehicleInput = { throttle: 0, steering: 0, brake: 0, handbrake: 0, clutch: 0, pedalBrake: 0 };
+    this.vehicleButtons = new Set();
+    this.vehicleControlMode = "buttons";
     this.hasGeneratorKey = false;
     this.storyStage = 0;
     this.generatorStarted = false;
@@ -49,6 +55,7 @@ export class Game {
       const key = event.key.toLowerCase();
       if (key === "shift") this.sprintHeld = down;
       if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
+      if (down && !event.repeat && key === "l" && this.inVehicle) this.toggleVehicleLights();
       if (down && !event.repeat && key === "e") this.handleContextInteraction();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
         event.preventDefault();
@@ -135,6 +142,48 @@ export class Game {
       button.addEventListener("pointercancel", () => set(false));
       button.addEventListener("lostpointercapture", () => set(false));
     });
+    document.querySelectorAll("[data-vehicle-input]").forEach(button => {
+      const action = button.dataset.vehicleInput;
+      const set = value => {
+        if (value) this.vehicleButtons.add(action); else this.vehicleButtons.delete(action);
+        button.classList.toggle("is-held", value);
+      };
+      button.addEventListener("pointerdown", event => { event.preventDefault(); event.stopPropagation(); button.setPointerCapture(event.pointerId); set(true); });
+      for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) button.addEventListener(type, () => set(false));
+    });
+    document.querySelector("#gear-up")?.addEventListener("click", () => this.shiftVehicleGear(1));
+    document.querySelector("#gear-down")?.addEventListener("click", () => this.shiftVehicleGear(-1));
+    document.querySelector("#vehicle-mode-toggle")?.addEventListener("click", () => this.toggleVehicleControlMode());
+    document.querySelector("#vehicle-exit")?.addEventListener("click", () => this.exitVehicle());
+    document.querySelector("#vehicle-lights")?.addEventListener("click", () => this.toggleVehicleLights());
+    const joystick = document.querySelector("#vehicle-joystick");
+    const stick = document.querySelector("#vehicle-joystick-stick");
+    let joystickPointer = null;
+    const updateJoystick = event => {
+      if (event.pointerId !== joystickPointer || !joystick || !stick) return;
+      const rect = joystick.getBoundingClientRect();
+      const radius = Math.max(26, Math.min(rect.width, rect.height) * 0.34);
+      const dx = event.clientX - (rect.left + rect.width / 2);
+      const dy = event.clientY - (rect.top + rect.height / 2);
+      const length = Math.hypot(dx, dy), scale = length > radius ? radius / length : 1;
+      const x = dx * scale, y = dy * scale;
+      stick.style.transform = "translate(" + x + "px," + y + "px)";
+      this.vehicleInput.steering = Math.max(-1, Math.min(1, x / radius));
+      this.vehicleInput.throttle = Math.max(-1, Math.min(1, -y / radius));
+    };
+    joystick?.addEventListener("pointerdown", event => {
+      if (this.vehicleControlMode !== "joystick") return;
+      event.preventDefault(); joystickPointer = event.pointerId;
+      joystick.setPointerCapture(event.pointerId); updateJoystick(event);
+    });
+    joystick?.addEventListener("pointermove", updateJoystick);
+    const releaseJoystick = event => {
+      if (event.pointerId !== joystickPointer) return;
+      joystickPointer = null; this.vehicleInput.steering = 0; this.vehicleInput.throttle = 0;
+      if (stick) stick.style.transform = "translate(0,0)";
+    };
+    joystick?.addEventListener("pointerup", releaseJoystick);
+    joystick?.addEventListener("pointercancel", releaseJoystick);
   }
 
   start() {
@@ -500,21 +549,68 @@ export class Game {
     }
   }
 
+  shiftVehicleGear(direction) {
+    this.vehicleGear = Math.max(1, Math.min(6, this.vehicleGear + direction));
+    const display = document.querySelector("#vehicle-gear-value");
+    if (display) display.textContent = this.vehicleGear + " / 6";
+  }
+
+  toggleVehicleControlMode() {
+    this.vehicleControlMode = this.vehicleControlMode === "buttons" ? "joystick" : "buttons";
+    const buttonMode = document.querySelector("#vehicle-button-controls");
+    const joystickMode = document.querySelector("#vehicle-joystick");
+    const toggle = document.querySelector("#vehicle-mode-toggle");
+    if (buttonMode) buttonMode.hidden = this.vehicleControlMode !== "buttons";
+    if (joystickMode) joystickMode.hidden = this.vehicleControlMode !== "joystick";
+    if (toggle) {
+      toggle.textContent = this.vehicleControlMode === "buttons" ? "BUTTON CONTROLS" : "JOYSTICK";
+      toggle.setAttribute("aria-pressed", String(this.vehicleControlMode === "joystick"));
+    }
+    this.vehicleButtons.clear();
+    this.vehicleInput.steering = 0; this.vehicleInput.throttle = 0;
+  }
+
+  toggleVehicleLights() {
+    if (!this.currentVehicle) return false;
+    this.vehicleLightsOn = !this.vehicleLightsOn;
+    const data = this.currentVehicle.userData || {};
+    for (const light of [data.carSpotL, data.carSpotR, data.tSpotL, data.tSpotR])
+      if (light) light.intensity = this.vehicleLightsOn ? (this.currentVehicleType === "truck" ? 78 : 58) : 0;
+    for (const lamp of data.headLights || [])
+      if (lamp.material?.emissive) lamp.material.emissiveIntensity = this.vehicleLightsOn ? 2.2 : 1.15;
+    const button = document.querySelector("#vehicle-lights");
+    if (button) { button.textContent = this.vehicleLightsOn ? "LIGHTS ON" : "LIGHTS"; button.classList.toggle("is-held", this.vehicleLightsOn); }
+    return this.vehicleLightsOn;
+  }
+
   mountVehicle(vehicle, type) {
     if (!vehicle) return;
     this.currentVehicle = vehicle;
     this.currentVehicleType = type;
     this.inVehicle = true;
-    this.vehicleSpeed = 0;
-    this.carSpeed = 0;
-    this.yaw = vehicle.rotation.y;
+    this.vehicleSpeed = 0; this.carSpeed = 0;
+    this.vehicleYaw = vehicle.rotation.y;
+    this.vehicleGear = 1; this.vehicleLightsOn = false;
+    this.vehicleButtons.clear();
+    this.vehicleInput = { throttle: 0, steering: 0, brake: 0, handbrake: 0, clutch: 0, pedalBrake: 0 };
+    this.keys.clear(); this.move.x = 0; this.move.z = 0; this.sprintHeld = false;
+    this.yaw = this.vehicleYaw + ((vehicle.userData?.forwardSign || -1) > 0 ? Math.PI : 0);
     this.pitch = type === "bike" ? -0.08 : -0.04;
+    document.body.classList.add("in-vehicle");
     const hud = document.querySelector("#vehicle-hud");
+    const controls = document.querySelector("#vehicle-controls");
     if (hud) {
       hud.hidden = false;
       const name = hud.querySelector("strong");
       if (name) name.textContent = type === "truck" ? "CARGO TRUCK" : type === "bike" ? "REBEL" : "SEDAN";
     }
+    if (controls) controls.hidden = false;
+    const bikeControls = document.querySelector("#bike-levers");
+    const carControls = document.querySelector("#car-pedals");
+    if (bikeControls) bikeControls.hidden = type !== "bike";
+    if (carControls) carControls.hidden = type === "bike";
+    const gear = document.querySelector("#vehicle-gear-value");
+    if (gear) gear.textContent = "1 / 6";
     this.positionVehicleCamera();
     this.showGameToast(type === "bike" ? "Mounted Rebel bike." : type === "truck" ? "Entered truck cab." : "Entered driver seat.");
   }
@@ -522,79 +618,108 @@ export class Game {
   positionVehicleCamera() {
     const v = this.currentVehicle;
     if (!v) return;
-    const yaw = v.rotation.y;
-    let lx = -0.44, ly = 1.22, lz = -0.42;
-    if (this.currentVehicleType === "truck") { lx = -0.56; ly = 2.02; lz = -1.70; }
+    const forwardSign = v.userData?.forwardSign || -1;
+    let lx = -0.44, ly = 1.22, lz = 0.42;
+    if (this.currentVehicleType === "truck") { lx = -0.56; ly = 2.02; lz = 1.72; }
     if (this.currentVehicleType === "bike") { lx = 0; ly = 1.04; lz = 0.22; }
-    const wx = Math.cos(yaw) * lx + Math.sin(yaw) * lz;
-    const wz = -Math.sin(yaw) * lx + Math.cos(yaw) * lz;
+    const wx = Math.cos(this.vehicleYaw) * lx + Math.sin(this.vehicleYaw) * lz;
+    const wz = -Math.sin(this.vehicleYaw) * lx + Math.cos(this.vehicleYaw) * lz;
     this.renderer.camera.position.set(v.position.x + wx, ly, v.position.z + wz);
+    this.yaw = this.vehicleYaw + (forwardSign > 0 ? Math.PI : 0);
     this.renderer.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
   }
 
   exitVehicle() {
     const v = this.currentVehicle;
     if (!v) return;
-    const yaw = v.rotation.y;
-    const side = this.currentVehicleType === "bike" ? 1.1 : 1.65;
-    this.inVehicle = false;
-    this.currentVehicle = null;
-    this.currentVehicleType = null;
-    const wx = Math.cos(yaw) * side;
-    const wz = -Math.sin(yaw) * side;
-    this.renderer.camera.position.set(v.position.x + wx, 1.62, v.position.z + wz);
-    this.yaw = yaw;
-    this.pitch = 0;
-    this.renderer.camera.rotation.set(0, this.yaw, 0, "YXZ");
-    const hud = document.querySelector("#vehicle-hud");
-    if (hud) hud.hidden = true;
-    const button = document.querySelector("#interact-button");
-    if (button) button.textContent = "INTERACT · E";
-    this.vehicleSpeed = 0;
+    const yaw = this.vehicleYaw;
+    const forwardSign = v.userData?.forwardSign || -1;
+    const sideDistance = this.currentVehicleType === "truck" ? 1.7 : this.currentVehicleType === "bike" ? 1.05 : 1.4;
+    const offsets = [[sideDistance,0],[-sideDistance,0],[0,-forwardSign*1.8],[0,forwardSign*1.8],
+      [sideDistance,-forwardSign*1.2],[-sideDistance,-forwardSign*1.2]];
+    let safePosition = null;
+    for (const [lx,lz] of offsets) {
+      const candidate = new THREE.Vector3(
+        v.position.x + Math.cos(yaw)*lx + Math.sin(yaw)*lz, 1.62,
+        v.position.z - Math.sin(yaw)*lx + Math.cos(yaw)*lz
+      );
+      const original = candidate.clone();
+      moveWithCollisions(candidate,0,0,PLAYER_CONFIG.radius,this.renderer.getGateCollisionCells(),this.renderer.solidMeshes);
+      if (candidate.distanceTo(original) < 0.08) { safePosition = original; break; }
+    }
+    if (!safePosition) { this.showGameToast("No safe space to step out here. Move the vehicle first."); return; }
+    this.inVehicle = false; this.currentVehicle = null; this.currentVehicleType = null; this.vehicleSpeed = 0;
+    this.vehicleButtons.clear();
+    this.vehicleInput = { throttle:0, steering:0, brake:0, handbrake:0, clutch:0, pedalBrake:0 };
+    document.body.classList.remove("in-vehicle");
+    this.renderer.camera.position.copy(safePosition);
+    this.yaw = yaw + (forwardSign > 0 ? Math.PI : 0); this.pitch = 0;
+    this.renderer.camera.rotation.set(0,this.yaw,0,"YXZ");
+    const hud=document.querySelector("#vehicle-hud"), controls=document.querySelector("#vehicle-controls");
+    if (hud) hud.hidden=true;
+    if (controls) controls.hidden=true;
+    const exitButton=document.querySelector("#vehicle-exit");
+    if (exitButton) exitButton.hidden=true;
+    const button=document.querySelector("#interact-button");
+    if (button) button.textContent="INTERACT · E";
   }
 
   updateVehicle(delta) {
     const vehicle = this.currentVehicle;
     if (!vehicle) { this.exitVehicle(); return; }
-    const throttle = (this.keys.has("w") || this.keys.has("arrowup") || this.move.z < 0 ? 1 : 0) -
-      (this.keys.has("s") || this.keys.has("arrowdown") || this.move.z > 0 ? 1 : 0);
-    const steering = (this.keys.has("d") || this.keys.has("arrowright") || this.move.x > 0 ? 1 : 0) -
-      (this.keys.has("a") || this.keys.has("arrowleft") || this.move.x < 0 ? 1 : 0);
     const type = this.currentVehicleType;
-    const maxSpeed = type === "truck" ? 5.2 : type === "bike" ? 11.5 :
-      (this.renderer.carTireStates?.some(t => t.blown) ? 3.2 : 7.5);
-    const acceleration = type === "truck" ? 1.15 : type === "bike" ? 2.8 : 1.8;
-    this.vehicleSpeed += (throttle * maxSpeed - this.vehicleSpeed) * Math.min(1, delta * (throttle ? acceleration : 2.8));
-    this.yaw -= steering * Math.sign(this.vehicleSpeed || 1) * Math.min(1, Math.abs(this.vehicleSpeed) / 3) * delta *
-      (type === "truck" ? 0.42 : type === "bike" ? 1.05 : 0.72);
-    vehicle.rotation.y = this.yaw;
-    const dx = -Math.sin(this.yaw) * this.vehicleSpeed * delta;
-    const dz = -Math.cos(this.yaw) * this.vehicleSpeed * delta;
-    const beforeX = vehicle.position.x, beforeZ = vehicle.position.z;
-    const radius = type === "truck" ? 1.35 : type === "bike" ? 0.52 : 1.02;
-    moveWithCollisions(vehicle.position, dx, dz, radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
-    if (Math.hypot(vehicle.position.x - beforeX, vehicle.position.z - beforeZ) < Math.hypot(dx, dz) * 0.2) this.vehicleSpeed *= 0.18;
-    const data = vehicle.userData || {};
-    if (type === "bike") {
-      for (const wheel of data.wheels || []) wheel.spin.rotation.x += this.vehicleSpeed * delta / 0.30;
-      if (data.forkPivot) data.forkPivot.rotation.y = steering * 0.38;
-    } else if (type === "truck") {
-      for (const wheel of data.wheels || []) {
-        wheel.spinGrp.rotation.x += this.vehicleSpeed * delta / 0.48;
-        if (wheel.isFront) wheel.steerGrp.rotation.y = steering * 0.32;
-      }
+    const keyThrottle = (this.keys.has("w") || this.keys.has("arrowup") ? 1 : 0) -
+      (this.keys.has("s") || this.keys.has("arrowdown") ? 1 : 0);
+    const keySteering = (this.keys.has("d") || this.keys.has("arrowright") ? 1 : 0) -
+      (this.keys.has("a") || this.keys.has("arrowleft") ? 1 : 0);
+    const buttonThrottle = this.vehicleButtons.has("throttle") ? 1 : this.vehicleButtons.has("reverse") ? -1 : 0;
+    const buttonSteering = (this.vehicleButtons.has("steer-right") ? 1 : 0) - (this.vehicleButtons.has("steer-left") ? 1 : 0);
+    const throttle = this.vehicleControlMode === "joystick" ? (this.vehicleInput.throttle || keyThrottle) : (buttonThrottle || keyThrottle);
+    const steering = this.vehicleControlMode === "joystick" ? (this.vehicleInput.steering || keySteering) : (buttonSteering || keySteering);
+    const brake = Math.max(
+      this.vehicleButtons.has("brake") || this.vehicleButtons.has("front-brake") ? 1 : 0,
+      this.vehicleButtons.has("pedal-brake") ? 1 : 0,
+      this.vehicleInput.brake || 0, this.vehicleInput.pedalBrake || 0,
+      this.keys.has(" ") ? 1 : 0
+    );
+    const handbrake = this.vehicleButtons.has("handbrake") ? 1 : this.vehicleInput.handbrake || 0;
+    const clutch = this.vehicleButtons.has("clutch") ? 1 : this.vehicleInput.clutch || 0;
+    const caps = type === "truck" ? [0,2,3,4,5,6,7] : type === "bike" ? [0,2.2,4,5.8,7.8,9.8,12] : [0,2.4,3.8,5.2,6.7,8.3,10];
+    const maxSpeed = caps[this.vehicleGear] || caps[1];
+    const drive = type === "bike" && clutch > 0.5 ? 0 : throttle;
+    const acceleration = type === "truck" ? 1.35 : type === "bike" ? 2.9 : 2.0;
+    this.vehicleSpeed += (drive * maxSpeed - this.vehicleSpeed) * Math.min(1, delta * (drive ? acceleration : 2.4));
+    if (brake > 0) this.vehicleSpeed *= Math.exp(-delta * (type === "bike" ? 7.5 : 8.5) * brake);
+    if (handbrake > 0) this.vehicleSpeed *= Math.exp(-delta * 15 * handbrake);
+    if (Math.abs(this.vehicleSpeed) < 0.035) this.vehicleSpeed = 0;
+    this.vehicleYaw -= steering * Math.sign(this.vehicleSpeed || 1) * Math.min(1,Math.abs(this.vehicleSpeed)/3) *
+      delta * (type === "truck" ? 0.38 : type === "bike" ? 1.05 : 0.72);
+    vehicle.rotation.y = this.vehicleYaw;
+    const forwardSign = vehicle.userData?.forwardSign || -1;
+    const dx = Math.sin(this.vehicleYaw) * this.vehicleSpeed * delta * forwardSign;
+    const dz = Math.cos(this.vehicleYaw) * this.vehicleSpeed * delta * forwardSign;
+    const beforeX=vehicle.position.x,beforeZ=vehicle.position.z;
+    const radius=type==="truck"?1.35:type==="bike"?0.52:1.02;
+    moveWithCollisions(vehicle.position,dx,dz,radius,this.renderer.getGateCollisionCells(),this.renderer.solidMeshes);
+    if (Math.hypot(vehicle.position.x-beforeX,vehicle.position.z-beforeZ)<Math.hypot(dx,dz)*0.2) this.vehicleSpeed*=0.18;
+    const data=vehicle.userData||{};
+    if (type==="bike") {
+      for (const wheel of data.wheels||[]) wheel.spin.rotation.x += this.vehicleSpeed*delta/0.30;
+      if (data.forkPivot) data.forkPivot.rotation.y=steering*0.38;
     } else {
-      for (const wheel of this.renderer.carWheels || []) wheel.rotation.x += this.vehicleSpeed * delta / 0.38;
+      for (const wheel of data.wheels||[]) {
+        wheel.spinGrp.rotation.x += this.vehicleSpeed*delta/(type==="truck"?0.48:0.36);
+        if (wheel.isFront) wheel.steerGrp.rotation.y=steering*(type==="truck"?0.30:0.36);
+      }
     }
+    const brakeGlow=brake>0||handbrake>0?1.8:0.55;
+    for (const material of data.tailMats||[]) if (material?.emissive) material.emissiveIntensity=brakeGlow;
     this.positionVehicleCamera();
-    const button = document.querySelector("#interact-button");
-    if (button) { button.hidden = false; button.textContent = "EXIT VEHICLE · E"; }
-    const hud = document.querySelector("#vehicle-hud");
-    const speed = document.querySelector("#vehicle-speed");
-    const spares = document.querySelector("#spare-count");
-    if (hud) hud.hidden = false;
-    if (speed) speed.textContent = Math.round(Math.abs(this.vehicleSpeed) * 3.6) + " km/h";
-    if (spares) spares.textContent = type === "car" ? "SPARES · " + this.spareTires : "WASD / TOUCH · DRIVE";
+    const speed=document.querySelector("#vehicle-speed"), spares=document.querySelector("#spare-count"), gear=document.querySelector("#vehicle-gear-value");
+    if (speed) speed.textContent=Math.round(Math.abs(this.vehicleSpeed)*3.6)+" km/h";
+    if (spares) spares.textContent=type==="car"?"SPARES · "+this.spareTires:type==="bike"?"REBEL":"CARGO";
+    if (gear) gear.textContent=this.vehicleGear+" / 6";
+    this.updateInteractionUI();
   }
 
   isNearGeneratorKey() {
@@ -778,9 +903,9 @@ export class Game {
     if (!button) return;
     if (this.levelTransitioning) { button.hidden = true; return; }
     if (this.inVehicle) {
-      button.hidden = false;
-      button.textContent = "EXIT VEHICLE · E";
-      button.setAttribute("aria-label", "Exit vehicle");
+      button.hidden = true;
+      const exit = document.querySelector("#vehicle-exit");
+      if (exit) exit.hidden = false;
       return;
     }
     const target = this.renderer.interactions.update();
