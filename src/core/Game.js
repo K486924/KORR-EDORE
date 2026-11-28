@@ -1,5 +1,5 @@
-import { Renderer } from "../renderer/Renderer.js?build=21";
-import { moveWithCollisions } from "../player/collision.js?v=2";
+import { Renderer } from "../renderer/Renderer.js?build=22";
+import { moveWithCollisions } from "../player/collision.js?v=3";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
 export class Game {
