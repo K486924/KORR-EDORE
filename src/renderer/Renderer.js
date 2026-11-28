@@ -5,7 +5,7 @@ import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 import { InteractionSystem } from "../interaction/InteractionSystem.js?v=8";
-import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=5";
+import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=6";
 import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=8";
 
 export class Renderer {
