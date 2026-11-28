@@ -151,17 +151,17 @@ export class Renderer {
     box([19, 0.05, 3.2], [0, -0.01, -0.1], pathMat, world, false);
 
     // The farmhouse: a broad two-storey country home, not a horror corridor.
-    box([16, 0.35, 15.5], [0, 0.0, -6.25], foundation);
-    box([15.8, 0.16, 15.25], [0, 0.25, -6.25], mat(0x9b927f), world, false);
+    box([36, 0.35, 19.5], [0, 0.0, -8.0], foundation);
+    box([35.8, 0.16, 19.25], [0, 0.25, -8.0], mat(0x9b927f), world, false);
     const wallY = 1.98;
     const wallH = 3.45;
     // First-floor structural walls: visible meshes and collision shapes share the same transforms.
     // Separate facade wall colliders leave a 3.0 m clear entrance (well above 1.2x player width).
-    solidBox([6.4, wallH, 0.42], [-4.7, wallY, 1.5], plaster);
-    solidBox([6.4, wallH, 0.42], [4.7, wallY, 1.5], plaster);
-    solidBox([0.42, wallH, 15.5], [-7.9, wallY, -6.25], plaster);
-    solidBox([0.42, wallH, 15.5], [7.9, wallY, -6.25], plaster);
-    solidBox([16.2, wallH, 0.42], [0, wallY, -14.0], plaster);
+    solidBox([15.45, wallH, 0.42], [-10.25, wallY, 1.5], plaster);
+    solidBox([15.45, wallH, 0.42], [10.25, wallY, 1.5], plaster);
+    solidBox([0.42, wallH, 19.0], [-18.0, wallY, -8.0], plaster);
+    solidBox([0.42, wallH, 19.0], [18.0, wallY, -8.0], plaster);
+    solidBox([36.2, wallH, 0.42], [0, wallY, -17.5], plaster);
     // Interior partitions are solid only where the plaster actually exists; door gaps stay clear.
     const innerWall = plaster;
     const iw = 0.16, ih = 3.05;
@@ -176,33 +176,33 @@ export class Renderer {
     // Ceiling is intentionally omitted in this first interior pass so the roofline and room layout remain readable.
 
     // Upper storey: the tall central block from the architectural sketches.
-    box([16.25, 0.24, 15.8], [0, 3.68, -6.25], trim);
+    box([36.25, 0.24, 19.8], [0, 3.68, -8.0], trim);
     const upperY = 5.05, upperH = 2.55;
-    box([15.8, upperH, 0.38], [0, upperY, 1.42], plaster);
-    box([15.8, upperH, 0.38], [0, upperY, -13.92], plaster);
-    box([0.38, upperH, 15.3], [-7.9, upperY, -6.25], plaster);
-    box([0.38, upperH, 15.3], [7.9, upperY, -6.25], plaster);
+    box([35.8, upperH, 0.38], [0, upperY, 1.42], plaster);
+    box([35.8, upperH, 0.38], [0, upperY, -17.42], plaster);
+    box([0.38, upperH, 19.0], [-18.0, upperY, -8.0], plaster);
+    box([0.38, upperH, 19.0], [18.0, upperY, -8.0], plaster);
     // Upper front windows and a shallow central balcony door.
-    for (const x of [-5.0, -3.0, 3.0, 5.0]) {
+    for (const x of [-13.0, -8.0, -4.0, 4.0, 8.0, 13.0]) {
       box([1.18, 1.35, 0.10], [x, 5.25, 1.18], trim, world, false);
       box([0.96, 1.12, 0.06], [x, 5.25, 1.10], glass, world, false);
       box([0.06, 1.12, 0.06], [x, 5.25, 1.06], wood, world, false);
       box([0.96, 0.06, 0.06], [x, 5.25, 1.06], wood, world, false);
     }
     // Main pitched roof, lifted above the upper storey.
-    const roofLeft = box([9.1, 0.42, 17.6], [-3.95, 7.0, -6.25], roofMat);
+    const roofLeft = box([19.2, 0.42, 21.6], [-8.35, 7.0, -8.0], roofMat);
     roofLeft.rotation.z = -0.34;
-    const roofRight = box([9.1, 0.42, 17.6], [3.95, 7.0, -6.25], roofMat);
+    const roofRight = box([19.2, 0.42, 21.6], [8.35, 7.0, -8.0], roofMat);
     roofRight.rotation.z = 0.34;
-    box([0.48, 0.58, 17.8], [0, 8.35, -6.25], roofMat);
+    box([0.48, 0.58, 21.8], [0, 8.35, -8.0], roofMat);
 
     // Front porch, open double doors and welcoming windows.
-    box([5.2, 0.22, 2.4], [0, 0.32, 2.55], foundation);
-    for (const x of [-2.15, 2.15]) {
+    box([9.2, 0.22, 3.0], [0, 0.32, 2.55], foundation);
+    for (const x of [-4.0, 4.0]) {
       box([0.24, 3.0, 0.24], [x, 1.8, 2.95], trim);
       box([0.28, 0.22, 0.28], [x, 3.32, 2.95], foundation);
     }
-    box([5.0, 0.2, 0.28], [0, 3.32, 2.95], trim);
+    box([9.0, 0.2, 0.28], [0, 3.32, 2.95], trim);
     // Proper double-leaf entrance: each leaf is hinged on its jamb, raycastable and collidable.
     for (const side of [-1, 1]) {
       const hinge = new THREE.Group();
@@ -225,7 +225,7 @@ export class Renderer {
       this.interactions.register(leaf, { id: doorState.id, label: "OPEN FRONT DOOR", maxDistance: 3.4 });
     }
     // Front windows with cream frames and warm glass.
-    for (const x of [-5.0, -3.2, 3.2, 5.0]) {
+    for (const x of [-13.0, -8.0, -4.0, 4.0, 8.0, 13.0]) {
       box([1.15, 1.35, 0.12], [x, 2.05, 1.25], trim, world, false);
       box([0.92, 1.12, 0.08], [x, 2.05, 1.17], glass, world, false);
       box([0.07, 1.12, 0.08], [x, 2.05, 1.1], wood, world, false);
@@ -239,9 +239,9 @@ export class Renderer {
       }
     }
     // A subtle balcony above the entrance.
-    box([5.2, 0.18, 1.1], [0, 3.95, 2.0], foundation);
-    box([5.2, 0.12, 0.1], [0, 4.55, 2.5], trim, world, false);
-    for (let x = -2.4; x <= 2.41; x += 0.6) {
+    box([9.2, 0.18, 1.1], [0, 3.95, 2.0], foundation);
+    box([9.2, 0.12, 0.1], [0, 4.55, 2.5], trim, world, false);
+    for (let x = -4.2; x <= 4.21; x += 0.6) {
       box([0.055, 0.58, 0.055], [x, 4.27, 2.5], trim, world, false);
     }
 
@@ -324,17 +324,17 @@ export class Renderer {
 
     // Two lower side wings from the player's farmhouse sketches.
     for (const side of [-1, 1]) {
-      const cx = side * 10.35;
+      const cx = side * 20.5;
       box([5.0, 0.28, 15.0], [cx, 0.18, -6.2], foundation);
       solidBox([4.9, 2.95, 0.30], [cx, 1.72, 1.25], plaster);
       solidBox([4.9, 2.95, 0.30], [cx, 1.72, -13.55], plaster);
-      solidBox([0.30, 2.95, 14.8], [side * 12.8, 1.72, -6.2], plaster);
+      solidBox([0.30, 2.95, 19.0], [side * 23.0, 1.72, -8.0], plaster);
       // Recessed wing windows, timber frames and warm interior glazing.
       for (const z of [-10.8, -6.2, -1.6]) {
-        box([0.10, 1.15, 1.35], [side * 12.63, 1.9, z], trim, world, false);
-        box([0.06, 0.94, 1.12], [side * 12.57, 1.9, z], glass, world, false);
-        box([0.06, 0.94, 0.055], [side * 12.52, 1.9, z], wood, world, false);
-        box([0.06, 0.055, 1.12], [side * 12.52, 1.9, z], wood, world, false);
+        box([0.10, 1.15, 1.35], [side * 22.83, 1.9, z], trim, world, false);
+        box([0.06, 0.94, 1.12], [side * 22.77, 1.9, z], glass, world, false);
+        box([0.06, 0.94, 0.055], [side * 22.72, 1.9, z], wood, world, false);
+        box([0.06, 0.055, 1.12], [side * 22.72, 1.9, z], wood, world, false);
       }
       // Separate lower pitched roof on each wing.
       const wingRoofA = box([3.0, 0.32, 15.8], [cx - side * 1.25, 3.45, -6.2], roofMat);
@@ -344,12 +344,12 @@ export class Renderer {
       box([0.18, 0.34, 15.9], [cx, 4.02, -6.2], roofMat);
       // Covered side veranda posts and a simple timber fascia.
       for (const z of [-12.4, -8.3, -4.1, 0.0]) {
-        box([0.18, 2.7, 0.18], [side * 13.0, 1.42, z], wood);
+        box([0.18, 2.7, 0.18], [side * 23.2, 1.42, z], wood);
       }
     }
 
     // Small detached generator room, with a metal service door and ventilation.
-    const genX = -15.7, genZ = -2.8;
+    const genX = -27.0, genZ = -2.8;
     box([4.0, 0.22, 4.8], [genX, 0.02, genZ], foundation);
     solidBox([3.8, 2.65, 0.22], [genX, 1.35, genZ + 2.3], plaster);
     solidBox([3.8, 2.65, 0.22], [genX, 1.35, genZ - 2.3], plaster);
