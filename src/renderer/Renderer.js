@@ -5,7 +5,7 @@ import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 import { InteractionSystem } from "../interaction/InteractionSystem.js?v=8";
-import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=3";
+import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=4";
 import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=8";
 
 export class Renderer {
@@ -290,7 +290,7 @@ export class Renderer {
     bike.rotation.y = 0.45;
     world.add(sedan, truck, bike);
     this.arrivalCar = sedan;
-    this.carWheels = sedan.userData.wheels.map(w => w.steerGrp);
+    this.carWheels = sedan.userData.wheels;
     this.carTireStates = sedan.userData.wheels.map((wheel, index) => ({ ...wheel, label: ["Front left", "Front right", "Rear left", "Rear right"][index] }));
     this.interactions.register(sedan, { id: "arrival-car", label: "ENTER VEHICLE", maxDistance: 4.2 });
     legacyTargets.forEach((target, index) => {
@@ -1070,7 +1070,7 @@ export class Renderer {
     }
     const truckData = this.vehicleFleet?.truck?.userData;
     animateHingedPart(truckData?.bonnetPart, "x");
-    animateHingedPart(truckData?.doorPart, "y");
+    for (const part of truckData?.doorParts || []) animateHingedPart(part, "y");
     animateHingedPart(truckData?.shutterPart, "x", 5);
     if (this.houseDoors) {
       const doorAlpha = 1 - Math.exp(-dt * 7.5);
