@@ -1,343 +1,328 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-let aimTargets=[]; let showToast=()=>{}; let enterVehicle=()=>{};
-export function createLegacyFleet(context={}) { aimTargets=context.aimTargets||[]; showToast=context.showToast||(()=>{}); enterVehicle=context.enterVehicle||(()=>{}); const sedan=buildDetailedSedan(); const truck=buildCargoTruck(); const bike=buildRebelBike(); return {sedan,truck,bike,aimTargets}; }
+let aimTargets = [];
+let showToast = () => {};
+let enterVehicle = () => {};
+
+export function createLegacyFleet(context = {}) {
+  aimTargets = context.aimTargets || [];
+  showToast = context.showToast || (() => {});
+  enterVehicle = context.enterVehicle || (() => {});
+  const sedan = buildDetailedSedan();
+  const truck = buildCargoTruck();
+  const bike = buildRebelBike();
+  return { sedan, truck, bike, aimTargets };
+}
+
+function makeVehicleGlass() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xa9c8d1, transparent: true, opacity: 0.34,
+    roughness: 0.1, metalness: 0.05, side: THREE.DoubleSide,
+    depthWrite: false
+  });
+}
+
 function buildDetailedSedan(paintHex = 0x8b1e24) {
+  // Vehicle-local origin is the chassis centre. +Z is the front of the car.
   const car = new THREE.Group();
-  const paintMat = new THREE.MeshStandardMaterial({ color: paintHex, metalness: 0.58, roughness: 0.24 });
-  const darkTrim = new THREE.MeshStandardMaterial({ color: 0x181a1f, roughness: 0.65 });
-  const chromeMat = new THREE.MeshStandardMaterial({ color: 0xdce3ea, metalness: 0.9, roughness: 0.18 });
-  const seatMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.8 });
-  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xb8e2f4, transparent: true, opacity: 0.32, roughness: 0.08, side: THREE.DoubleSide });
+  car.name = "KORR_RED_SEDAN";
+  const paint = new THREE.MeshStandardMaterial({ color: paintHex, metalness: 0.52, roughness: 0.28 });
+  const trim = new THREE.MeshStandardMaterial({ color: 0x171a1d, roughness: 0.72 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xd4d9d8, metalness: 0.88, roughness: 0.22 });
+  const leather = new THREE.MeshStandardMaterial({ color: 0x38291f, roughness: 0.86 });
+  const glass = makeVehicleGlass();
+  const headLampMat = new THREE.MeshStandardMaterial({ color: 0xfff4d5, emissive: 0xffe4a3, emissiveIntensity: 1.15 });
+  const tailLampMat = new THREE.MeshStandardMaterial({ color: 0x8f1618, emissive: 0xff1515, emissiveIntensity: 0.55 });
+  const box = (parent, size, position, material) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+    mesh.position.set(...position);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+  const W = 1.84, wheelRadius = 0.35;
 
-  const W = 1.84, WR = 0.35;
-
-  // Hollow Interior Floorpan (z from -0.95 to +1.08)
-  const floorPan = new THREE.Mesh(new THREE.BoxGeometry(W - 0.12, 0.12, 2.04), darkTrim);
-  floorPan.position.set(0, 0.35, 0.06); floorPan.castShadow = true; floorPan.receiveShadow = true;
-  car.add(floorPan);
-
-  // Rocker panels under door hinges
-  for (const s of [-1, 1]) {
-    const sill = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.14, 2.02), paintMat);
-    sill.position.set(s * (W / 2 - 0.05), 0.36, 0.06); sill.castShadow = true;
-    car.add(sill);
+  // Chassis and four distinct, non-intersecting exterior body sections.
+  box(car, [1.58, 0.16, 3.72], [0, 0.43, 0], trim);
+  box(car, [1.84, 0.48, 1.86], [0, 0.77, 0], paint);             // lower body
+  box(car, [1.72, 0.12, 1.02], [0, 1.07, 1.44], paint);          // hood
+  box(car, [1.72, 0.12, 1.00], [0, 1.07, -1.44], paint);         // trunk
+  box(car, [1.90, 0.22, 0.18], [0, 0.43, 2.04], trim);
+  box(car, [1.90, 0.22, 0.18], [0, 0.43, -2.04], trim);
+  box(car, [0.84, 0.18, 0.07], [0, 0.80, 2.00], chrome);
+  for (const side of [-1, 1]) {
+    box(car, [0.06, 0.18, 0.28], [side * 0.68, 0.84, 2.02], chrome);
+    box(car, [0.12, 0.15, 1.78], [side * 0.86, 0.48, 0], paint);
   }
 
-  // Front Engine Bay & Engine Components
-  const engineBay = new THREE.Mesh(new THREE.BoxGeometry(W - 0.10, 0.52, 1.18), darkTrim);
-  engineBay.position.set(0, 0.62, -1.56); engineBay.castShadow = true; car.add(engineBay);
-  const frontFenderWall = new THREE.Mesh(new THREE.BoxGeometry(W - 0.06, 0.12, 1.18), paintMat);
-  frontFenderWall.position.set(0, 0.88, -1.56); frontFenderWall.castShadow = true; car.add(frontFenderWall);
+  // Engine sits below the closed bonnet; no loose parts protrude through it.
+  box(car, [0.78, 0.30, 0.66], [0, 0.78, 1.43], trim);
+  box(car, [0.36, 0.12, 0.34], [-0.38, 0.91, 1.38], chrome);
 
-  const engBlock = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.34, 0.62), new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.75, roughness: 0.32 }));
-  engBlock.position.set(0, 0.96, -1.55);
-  const battery = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.20, 0.18), new THREE.MeshStandardMaterial({ color: 0x2980b9 }));
-  battery.position.set(0.46, 0.96, -1.78);
-  car.add(engBlock, battery);
-
-  const fBumper = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.26, 0.24), darkTrim); fBumper.position.set(0, 0.42, -2.18);
-  const grille = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.18, 0.08), chromeMat); grille.position.set(0, 0.66, -2.15);
-  car.add(fBumper, grille);
-
-  const headLights = [];
-  for (const s of [-1, 1]) {
-    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.08), new THREE.MeshStandardMaterial({ color: 0xfffae6, emissive: 0xffeaa7, emissiveIntensity: 1.5 }));
-    hl.position.set(s * 0.66, 0.68, -2.15); car.add(hl); headLights.push(hl);
+  // Cabin shell, pillars and roof.
+  box(car, [1.56, 0.10, 1.68], [0, 1.72, 0], paint);
+  for (const side of [-1, 1]) {
+    const frontPillar = box(car, [0.085, 0.66, 0.10], [side * 0.78, 1.39, 0.80], paint);
+    frontPillar.rotation.x = -0.16;
+    const rearPillar = box(car, [0.085, 0.66, 0.10], [side * 0.78, 1.39, -0.80], paint);
+    rearPillar.rotation.x = 0.16;
+    box(car, [0.075, 0.62, 0.09], [side * 0.78, 1.38, 0], trim);
   }
+  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.55), glass);
+  windshield.position.set(0, 1.39, 0.885);
+  windshield.rotation.x = -0.12;
+  car.add(windshield);
+  const rearGlass = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.54), glass);
+  rearGlass.position.set(0, 1.39, -0.885);
+  rearGlass.rotation.set(0.12, Math.PI, 0);
+  car.add(rearGlass);
 
-  const carSpotL = new THREE.SpotLight(0xfff4d6, 0, 68, 0.6, 0.45, 1);
-  carSpotL.position.set(-0.66, 0.70, -2.2); carSpotL.target.position.set(-0.66, 0.3, -16);
-  const carSpotR = new THREE.SpotLight(0xfff4d6, 0, 68, 0.6, 0.45, 1);
-  carSpotR.position.set(0.66, 0.70, -2.2); carSpotR.target.position.set(0.66, 0.3, -16);
-  car.add(carSpotL, carSpotL.target, carSpotR, carSpotR.target);
-
-  // Rear Cargo Trunk Tub + Items
-  const trunkFloor = new THREE.Mesh(new THREE.BoxGeometry(W - 0.12, 0.12, 1.04), darkTrim); trunkFloor.position.set(0, 0.46, 1.64);
-  const trunkWallL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 1.04), paintMat); trunkWallL.position.set(-W / 2 + 0.07, 0.67, 1.64);
-  const trunkWallR = trunkWallL.clone(); trunkWallR.position.x = W / 2 - 0.07;
-  const trunkWallB = new THREE.Mesh(new THREE.BoxGeometry(W, 0.44, 0.14), paintMat); trunkWallB.position.set(0, 0.67, 2.12);
-  const rBumper = new THREE.Mesh(new THREE.BoxGeometry(W + 0.04, 0.26, 0.22), darkTrim); rBumper.position.set(0, 0.42, 2.18);
-  const jerryCan = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.34, 0.18), new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.4 })); jerryCan.position.set(-0.42, 0.68, 1.66);
-  const toolBox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.18, 0.24), new THREE.MeshStandardMaterial({ color: 0x2980b9, metalness: 0.5 })); toolBox.position.set(0.35, 0.61, 1.64);
-  car.add(trunkFloor, trunkWallL, trunkWallR, trunkWallB, rBumper, jerryCan, toolBox);
-
-  const tailMats = [];
-  for (const s of [-1, 1]) {
-    const tm = new THREE.MeshStandardMaterial({ color: 0x900, emissive: 0xff0000, emissiveIntensity: 0.35 });
-    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.08), tm); tl.position.set(s * 0.68, 0.76, 2.18);
-    car.add(tl); tailMats.push(tm);
-  }
-
-  // Roof & Pillars (Connected cleanly with no floating parts)
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(W - 0.24, 0.08, 1.64), paintMat);
-  roof.position.set(0, 1.44, 0.12); roof.castShadow = true; car.add(roof);
-
-  for (const s of [-1, 1]) {
-    const aPil = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 0.08), paintMat); aPil.position.set(s * (W / 2 - 0.12), 1.16, -0.82); aPil.rotation.x = -0.44;
-    const bPil = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.56, 0.10), darkTrim); bPil.position.set(s * (W / 2 - 0.10), 1.16, 0.08);
-    const cPil = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.62, 0.12), paintMat); cPil.position.set(s * (W / 2 - 0.12), 1.16, 0.98); cPil.rotation.x = 0.46;
-    car.add(aPil, bPil, cPil);
-  }
-
-  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.26, 0.68), glassMat); windshield.position.set(0, 1.17, -0.84); windshield.rotation.x = -Math.PI / 2 + 0.45;
-  const rearGlass = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.26, 0.66), glassMat); rearGlass.position.set(0, 1.17, 1.00); rearGlass.rotation.x = Math.PI / 2 - 0.47;
-  car.add(windshield, rearGlass);
-
-  // Dashboard, Steering Wheel & 4 Seats
-  const dash = new THREE.Mesh(new THREE.BoxGeometry(W - 0.22, 0.36, 0.42), darkTrim); dash.position.set(0, 0.76, -0.84);
-  const steerWheel = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.024, 10, 24), darkTrim); steerWheel.position.set(-0.44, 0.94, -0.58); steerWheel.rotation.x = -0.45;
-  car.add(dash, steerWheel);
-
-  function makeSeat(x, z) {
-    const sg = new THREE.Group(); sg.position.set(x, 0.41, z);
-    const base = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.12, 0.52), seatMat); base.position.y = 0.08;
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.58, 0.12), seatMat); back.position.set(0, 0.38, 0.22); back.rotation.x = -0.14;
-    const headR = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.10), seatMat); headR.position.set(0, 0.74, 0.26);
-    sg.add(base, back, headR); car.add(sg);
-  }
-  makeSeat(-0.44, -0.22); makeSeat(0.44, -0.22); makeSeat(-0.44, 0.62); makeSeat(0.44, 0.62);
-
-  // Fixed Hinged Doors: Hinge at front (-0.76 for front, +0.12 for rear), panel extends cleanly along +Z with proper side orientation
-  const parts = {};
-  function createDoor(name, side, zHinge, zLen, isFront, label) {
-    const pivot = new THREE.Group();
-    pivot.position.set(side * (W / 2 - 0.04), 0.42, zHinge);
-    car.add(pivot);
-
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.50, zLen), paintMat);
-    panel.position.set(0, 0.25, zLen / 2); panel.castShadow = true;
-
-    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.14), chromeMat);
-    handle.position.set(side * 0.05, 0.42, zLen - 0.16);
-
-    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, zLen - 0.06), darkTrim);
-    frameTop.position.set(0, 0.96, zLen / 2);
-    const frameRear = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.48, 0.05), darkTrim);
-    frameRear.position.set(0, 0.73, zLen - 0.03);
-
-    const winGlass = new THREE.Mesh(new THREE.PlaneGeometry(zLen - 0.08, 0.44), glassMat);
-    winGlass.rotation.y = Math.PI / 2; winGlass.position.set(0, 0.73, zLen / 2);
-
-    pivot.add(panel, handle, frameTop, frameRear, winGlass);
-    if (isFront) {
-      const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.10, 0.08), darkTrim);
-      mirror.position.set(side * 0.11, 0.54, 0.10);
-      pivot.add(mirror);
+  // Interior details stay below the glass line.
+  box(car, [1.56, 0.20, 0.22], trim, [0, 1.02, 0.78]);
+  const steering = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 10, 20), trim);
+  steering.position.set(-0.42, 1.10, 0.57);
+  steering.rotation.x = -0.35;
+  car.add(steering);
+  for (const x of [-0.43, 0.43]) {
+    for (const z of [-0.34, 0.42]) {
+      box(car, [0.48, 0.13, 0.48], [x, 0.67, z], leather);
+      const back = box(car, [0.46, 0.52, 0.12], [x, 0.98, z - 0.16], leather);
+      back.rotation.x = -0.12;
     }
+  }
 
-    // Swings outward away from cabin (side = -1 left swings -Y, side = +1 right swings +Y)
-    const doorPart = { pivot, open: false, angle: 0, maxAngle: side * 1.05, winGlass, winDown: false, label };
-    parts[name] = doorPart;
-
+  const parts = {};
+  function createDoor(name, side, frontHinge, label) {
+    const length = 0.82;
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.91, 0.52, frontHinge ? 0.94 : -0.94);
+    car.add(pivot);
+    const centerZ = frontHinge ? -length / 2 : length / 2;
+    const panel = box(pivot, [0.075, 0.50, length], paint, [0, 0.25, centerZ]);
+    box(pivot, [0.055, 0.055, length - 0.07], trim, [side * 0.018, 0.98, centerZ]);
+    const window = new THREE.Mesh(new THREE.PlaneGeometry(length - 0.12, 0.43), glass);
+    window.rotation.y = side * Math.PI / 2;
+    window.position.set(side * 0.052, 0.76, centerZ);
+    pivot.add(window);
+    box(pivot, [0.045, 0.045, length - 0.10], paint, [side * 0.035, 0.53, centerZ]);
+    const handle = box(pivot, [0.035, 0.045, 0.13], chrome,
+      [side * 0.065, 0.43, centerZ + (frontHinge ? 0.20 : -0.20)]);
+    const maxAngle = (frontHinge ? -side : side) * (Math.PI / 3);
+    const part = { pivot, panel, window, open: false, angle: 0, maxAngle, label };
+    parts[name] = part;
     aimTargets.push({
-      mesh: panel,
-      maxDist: 3.4,
-      getLabel: () => {
-        if (name === 'doorFL' && doorPart.open) return "Get In Driver Seat";
-        return doorPart.open ? `Close ${label}` : `Open ${label}`;
-      },
+      mesh: panel, maxDist: 3.6,
+      getLabel: () => name === "doorFL" && part.open ? "ENTER SEDAN" : (part.open ? "CLOSE " : "OPEN ") + label,
       onInteract: () => {
-        if (name === 'doorFL' && doorPart.open) {
-          enterVehicle('car');
-        } else {
-          doorPart.open = !doorPart.open;
-          showToast(`${doorPart.open ? 'Opened' : 'Closed'} ${label}`);
-        }
+        if (name === "doorFL" && part.open) enterVehicle("car");
+        else { part.open = !part.open; showToast((part.open ? "Opened " : "Closed ") + label); }
       }
     });
-    return doorPart;
   }
+  createDoor("doorFL", -1, true, "DRIVER DOOR");
+  createDoor("doorFR", 1, true, "PASSENGER DOOR");
+  createDoor("doorRL", -1, false, "REAR LEFT DOOR");
+  createDoor("doorRR", 1, false, "REAR RIGHT DOOR");
 
-  createDoor('doorFL', -1, -0.76, 0.86, true, "Sedan Driver Door");
-  createDoor('doorFR',  1, -0.76, 0.86, true, "Sedan Passenger Door");
-  createDoor('doorRL', -1,  0.12, 0.84, false, "Sedan Rear Left Door");
-  createDoor('doorRR',  1,  0.12, 0.84, false, "Sedan Rear Right Door");
-
-  // Openable Bonnet / Hood
-  const hoodPivot = new THREE.Group(); hoodPivot.position.set(0, 0.92, -0.98);
-  const hoodMesh = new THREE.Mesh(new THREE.BoxGeometry(W - 0.10, 0.06, 1.18), paintMat);
-  hoodMesh.position.set(0, 0, -0.59); hoodMesh.castShadow = true;
-  hoodPivot.add(hoodMesh); car.add(hoodPivot);
-  parts.hood = { pivot: hoodPivot, open: false, angle: 0, maxAngle: 0.78 };
-  aimTargets.push({
-    mesh: hoodMesh, maxDist: 3.6,
-    getLabel: () => (parts.hood.open ? "Close Sedan Bonnet" : "Open Sedan Bonnet"),
-    onInteract: () => { parts.hood.open = !parts.hood.open; showToast(`${parts.hood.open ? 'Opened' : 'Closed'} Sedan Bonnet`); }
+  const hoodPivot = new THREE.Group();
+  hoodPivot.position.set(0, 1.08, 0.94);
+  const hoodMesh = box(hoodPivot, [1.72, 0.06, 1.02], paint, [0, 0, 0.51]);
+  car.add(hoodPivot);
+  parts.hood = { pivot: hoodPivot, open: false, angle: 0, maxAngle: -50 * Math.PI / 180 };
+  aimTargets.push({ mesh: hoodMesh, maxDist: 3.8,
+    getLabel: () => parts.hood.open ? "CLOSE SEDAN HOOD" : "OPEN SEDAN HOOD",
+    onInteract: () => { parts.hood.open = !parts.hood.open; showToast(parts.hood.open ? "Opened sedan hood" : "Closed sedan hood"); }
   });
 
-  // Openable Trunk Lid
-  const trunkPivot = new THREE.Group(); trunkPivot.position.set(0, 0.92, 1.12);
-  const trunkMesh = new THREE.Mesh(new THREE.BoxGeometry(W - 0.10, 0.06, 1.04), paintMat);
-  trunkMesh.position.set(0, 0, 0.52); trunkMesh.castShadow = true;
-  trunkPivot.add(trunkMesh); car.add(trunkPivot);
-  parts.trunk = { pivot: trunkPivot, open: false, angle: 0, maxAngle: -0.92 };
-  aimTargets.push({
-    mesh: trunkMesh, maxDist: 3.6,
-    getLabel: () => (parts.trunk.open ? "Close Sedan Trunk" : "Open Sedan Trunk"),
-    onInteract: () => { parts.trunk.open = !parts.trunk.open; showToast(`${parts.trunk.open ? 'Opened' : 'Closed'} Sedan Trunk`); }
+  const trunkPivot = new THREE.Group();
+  trunkPivot.position.set(0, 1.08, -0.94);
+  const trunkMesh = box(trunkPivot, [1.72, 0.06, 1.00], paint, [0, 0, -0.50]);
+  car.add(trunkPivot);
+  parts.trunk = { pivot: trunkPivot, open: false, angle: 0, maxAngle: 55 * Math.PI / 180 };
+  aimTargets.push({ mesh: trunkMesh, maxDist: 3.8,
+    getLabel: () => parts.trunk.open ? "CLOSE SEDAN TRUNK" : "OPEN SEDAN TRUNK",
+    onInteract: () => { parts.trunk.open = !parts.trunk.open; showToast(parts.trunk.open ? "Opened sedan trunk" : "Closed sedan trunk"); }
   });
 
-  // 4 Wheels
+  const headLights = [], tailMats = [];
+  for (const side of [-1, 1]) {
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.07), headLampMat);
+    head.position.set(side * 0.65, 0.82, 2.04); car.add(head); headLights.push(head);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 0.07), tailLampMat);
+    tail.position.set(side * 0.65, 0.80, -2.04); car.add(tail); tailMats.push(tailLampMat);
+  }
+  const carSpotL = new THREE.SpotLight(0xfff1ce, 0, 58, 0.52, 0.48, 1);
+  const carSpotR = new THREE.SpotLight(0xfff1ce, 0, 58, 0.52, 0.48, 1);
+  carSpotL.position.set(-0.64, 0.82, 2.05); carSpotR.position.set(0.64, 0.82, 2.05);
+  carSpotL.target.position.set(-0.64, 0.25, 17); carSpotR.target.position.set(0.64, 0.25, 17);
+  car.add(carSpotL, carSpotL.target, carSpotR, carSpotR.target);
+
   const wheels = [];
   function makeWheel(x, z, isFront) {
-    const steerGrp = new THREE.Group(); steerGrp.position.set(x, WR, z); car.add(steerGrp);
-    const spinGrp = new THREE.Group(); steerGrp.add(spinGrp);
-    const tire = new THREE.Mesh(new THREE.CylinderGeometry(WR, WR, 0.23, 24), new THREE.MeshStandardMaterial({ color: 0x151619, roughness: 0.85 }));
-    tire.rotation.z = Math.PI / 2; tire.castShadow = true;
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(WR * 0.62, WR * 0.62, 0.24, 16), chromeMat); rim.rotation.z = Math.PI / 2;
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.25, WR * 1.15, 0.05), darkTrim);
-    const spoke2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, WR * 1.15), darkTrim);
-    spinGrp.add(tire, rim, spoke, spoke2);
-    wheels.push({ steerGrp, spinGrp, tireMesh: tire, mesh: steerGrp, isFront, health: 1, blown: false });
+    const steerGrp = new THREE.Group();
+    steerGrp.position.set(x, wheelRadius, z);
+    car.add(steerGrp);
+    const spinGrp = new THREE.Group();
+    steerGrp.add(spinGrp);
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.24, 28), new THREE.MeshStandardMaterial({ color: 0x111315, roughness: 0.9 }));
+    tire.rotation.z = Math.PI / 2;
+    tire.castShadow = true;
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius * 0.62, wheelRadius * 0.62, 0.25, 18), chrome);
+    rim.rotation.z = Math.PI / 2;
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.26, 16), trim);
+    cap.rotation.z = Math.PI / 2;
+    spinGrp.add(tire, rim, cap);
+    wheels.push({ steerGrp, spinGrp, isFront, tireMesh: tire, mesh: steerGrp, health: 1, blown: false });
   }
-  makeWheel(-0.84, -1.42, true); makeWheel(0.84, -1.42, true); makeWheel(-0.84, 1.42, false); makeWheel(0.84, 1.42, false);
+  makeWheel(-0.88, 1.38, true); makeWheel(0.88, 1.38, true);
+  makeWheel(-0.88, -1.38, false); makeWheel(0.88, -1.38, false);
 
-  car.userData = { parts, wheels, headLights, carSpotL, carSpotR, tailMats, WR };
+  car.userData = { parts, wheels, headLights, carSpotL, carSpotR, tailMats, WR: wheelRadius, forwardSign: 1 };
+  aimTargets.push({ mesh: car, maxDist: 4.2, getLabel: () => "ENTER SEDAN", onInteract: () => enterVehicle("car") });
   return car;
 }
 
 function buildCargoTruck() {
+  // Same convention as the sedan: origin at chassis centre, +Z is forward.
   const truck = new THREE.Group();
-  const cabMat = new THREE.MeshStandardMaterial({ color: 0xd9771c, metalness: 0.45, roughness: 0.32 });
-  const cargoMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d5, roughness: 0.72 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: 0.7 });
-  const chromeMat = new THREE.MeshStandardMaterial({ color: 0xdce3ea, metalness: 0.88, roughness: 0.2 });
-  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xb8e2f4, transparent: true, opacity: 0.32, roughness: 0.08, side: THREE.DoubleSide });
+  truck.name = "KORR_CREAM_BOX_TRUCK";
+  const cabPaint = new THREE.MeshStandardMaterial({ color: 0xe0d6c4, metalness: 0.22, roughness: 0.48 });
+  const cargoPaint = new THREE.MeshStandardMaterial({ color: 0xe9e3d8, roughness: 0.76 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x191d1e, roughness: 0.78 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xcbd1cf, metalness: 0.84, roughness: 0.24 });
+  const glass = makeVehicleGlass();
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xfff4d5, emissive: 0xffe4a3, emissiveIntensity: 1.15 });
+  const tailMat = new THREE.MeshStandardMaterial({ color: 0x8f1618, emissive: 0xff1515, emissiveIntensity: 0.5 });
+  const box = (parent, size, position, material) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+    mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh);
+    return mesh;
+  };
+  const W = 2.36, wheelRadius = 0.52;
 
-  const W = 2.36, WR = 0.52;
+  // Chassis and cargo compartment are independent; cargo ends behind the cab.
+  box(truck, [2.05, 0.22, 6.85], [0, 0.58, -0.02], dark);
+  box(truck, [2.18, 0.12, 4.00], [0, 0.83, -1.43], dark);             // cargo floor
+  box(truck, [2.18, 0.12, 4.00], [0, 2.79, -1.43], cargoPaint);       // cargo roof
+  box(truck, [0.10, 1.88, 4.00], [-1.13, 1.82, -1.43], cargoPaint);   // left wall
+  box(truck, [0.10, 1.88, 4.00], [1.13, 1.82, -1.43], cargoPaint);    // right wall
+  box(truck, [2.18, 1.88, 0.10], [0, 1.82, 0.57], cargoPaint);        // front wall
+  // The rear opening is clear when the top-hinged cargo door is raised.
 
-  // Main Steel Chassis Frame (z from -3.4 to +3.6)
-  const chassis = new THREE.Mesh(new THREE.BoxGeometry(W - 0.3, 0.24, 7.0), darkMat);
-  chassis.position.set(0, 0.62, 0.1); chassis.castShadow = true; truck.add(chassis);
+  // Cab floor and separate engine bay at the forward end.
+  box(truck, [2.18, 0.14, 1.55], [0, 0.80, 1.55], dark);
+  box(truck, [1.72, 0.42, 0.76], [0, 0.91, 2.92], dark);
+  box(truck, [0.92, 0.30, 0.55], [0, 1.05, 2.88], dark);
+  box(truck, [2.20, 0.14, 0.86], [0, 1.34, 2.92], cabPaint);        // bonnet top
+  box(truck, [2.44, 0.26, 0.18], [0, 0.68, 3.42], dark);            // front bumper
+  box(truck, [1.08, 0.42, 0.08], [0, 1.06, 3.39], chrome);          // grille
 
-  // Cab Floor & Engine Bay (z from -3.35 to -1.35)
-  const cabFloor = new THREE.Mesh(new THREE.BoxGeometry(W - 0.14, 0.14, 1.9), darkMat);
-  cabFloor.position.set(0, 0.76, -1.75); truck.add(cabFloor);
+  // Cab rear bulkhead leaves a small expansion seam before the cargo front wall.
+  box(truck, [2.18, 1.62, 0.08], [0, 1.75, 0.78], cabPaint);
 
-  // Engine Block under Bonnet (z = -2.85)
-  const engBay = new THREE.Mesh(new THREE.BoxGeometry(W - 0.24, 0.68, 1.15), darkMat);
-  engBay.position.set(0, 1.12, -2.82); truck.add(engBay);
-  const truckEngine = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.46, 0.78), new THREE.MeshStandardMaterial({ color: 0x2c7873, metalness: 0.65, roughness: 0.35 }));
-  truckEngine.position.set(0, 1.56, -2.82); truck.add(truckEngine);
+  // Cab roof, pillars and flush glazing.
+  box(truck, [2.16, 0.14, 1.58], [0, 2.56, 1.62], cabPaint);
+  for (const side of [-1, 1]) {
+    const front = box(truck, [0.10, 1.06, 0.10], [side * 1.06, 2.00, 2.39], cabPaint);
+    front.rotation.x = -0.05;
+    box(truck, [0.10, 1.06, 0.10], [side * 1.06, 2.00, 0.90], cabPaint);
+    box(truck, [0.09, 0.88, 0.08], [side * 1.06, 1.96, 1.62], cabPaint);
+  }
+  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.92, 0.78), glass);
+  windshield.position.set(0, 1.98, 2.435); windshield.rotation.x = -0.05; truck.add(windshield);
+  const rearCabGlass = new THREE.Mesh(new THREE.PlaneGeometry(1.86, 0.70), glass);
+  rearCabGlass.position.set(0, 1.98, 0.735); rearCabGlass.rotation.set(0.05, Math.PI, 0); truck.add(rearCabGlass);
 
-  // Front Bumper, Grille & Headlights
-  const bumper = new THREE.Mesh(new THREE.BoxGeometry(W + 0.08, 0.34, 0.32), darkMat); bumper.position.set(0, 0.66, -3.45);
-  const grille = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.48, 0.1), chromeMat); grille.position.set(0, 1.18, -3.38);
-  truck.add(bumper, grille);
+  const driverSeat = box(truck, [0.62, 0.62, 0.58], new THREE.Vector3(-0.52, 1.16, 1.34).toArray(), dark);
+  const steering = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.026, 10, 22), dark);
+  steering.position.set(-0.55, 1.55, 2.00); steering.rotation.x = -0.42; truck.add(steering);
 
-  const headLights = [];
-  for (const s of [-1, 1]) {
-    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.2, 0.1), new THREE.MeshStandardMaterial({ color: 0xfffae6, emissive: 0xffeaa7, emissiveIntensity: 1.5 }));
-    hl.position.set(s * 0.88, 0.96, -3.38); truck.add(hl); headLights.push(hl);
+  const bonnetPivot = new THREE.Group();
+  bonnetPivot.position.set(0, 1.38, 2.48);
+  const bonnetMesh = box(bonnetPivot, [2.12, 0.07, 0.88], cabPaint, [0, 0, 0.44]);
+  truck.add(bonnetPivot);
+  const bonnetPart = { pivot: bonnetPivot, open: false, angle: 0, maxAngle: -50 * Math.PI / 180 };
+  aimTargets.push({ mesh: bonnetMesh, maxDist: 4.0,
+    getLabel: () => bonnetPart.open ? "CLOSE TRUCK HOOD" : "OPEN TRUCK HOOD",
+    onInteract: () => { bonnetPart.open = !bonnetPart.open; showToast(bonnetPart.open ? "Opened truck hood" : "Closed truck hood"); }
+  });
+
+  const doorParts = [];
+  function createTruckDoor(side, label) {
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 1.17, 0.78, 2.34);
+    truck.add(pivot);
+    const centerZ = -0.70;
+    const panel = box(pivot, [0.08, 0.72, 1.38], cabPaint, [0, 0.36, centerZ]);
+    const window = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.54), glass);
+    window.rotation.y = side * Math.PI / 2;
+    window.position.set(side * 0.052, 1.05, centerZ);
+    pivot.add(window);
+    box(pivot, [0.06, 0.06, 1.28], cabPaint, [0, 1.38, centerZ]);
+    box(pivot, [0.06, 0.06, 1.28], dark, [0, 0.74, centerZ]);
+    const part = { pivot, panel, window, open: false, angle: 0, maxAngle: -side * (Math.PI / 3), label };
+    doorParts.push(part);
+    aimTargets.push({
+      mesh: panel, maxDist: 4.0,
+      getLabel: () => side === -1 && part.open ? "ENTER TRUCK" : (part.open ? "CLOSE " : "OPEN ") + label,
+      onInteract: () => {
+        if (side === -1 && part.open) enterVehicle("truck");
+        else { part.open = !part.open; showToast((part.open ? "Opened " : "Closed ") + label); }
+      }
+    });
+  }
+  createTruckDoor(-1, "TRUCK DRIVER DOOR");
+  createTruckDoor(1, "TRUCK PASSENGER DOOR");
+  const doorPart = doorParts[0];
+
+  const shutterPivot = new THREE.Group();
+  shutterPivot.position.set(0, 2.72, -3.49);
+  const shutterMesh = box(shutterPivot, [2.12, 1.82, 0.08], chrome, [0, -0.91, 0]);
+  truck.add(shutterPivot);
+  const shutterPart = { pivot: shutterPivot, open: false, angle: 0, maxAngle: 1.48 };
+  aimTargets.push({ mesh: shutterMesh, maxDist: 4.2,
+    getLabel: () => shutterPart.open ? "CLOSE REAR CARGO DOOR" : "OPEN REAR CARGO DOOR",
+    onInteract: () => { shutterPart.open = !shutterPart.open; showToast(shutterPart.open ? "Rear cargo door raised" : "Rear cargo door closed"); }
+  });
+
+  // Cargo remains inside the compartment and below the roofline.
+  const cartonMat = new THREE.MeshStandardMaterial({ color: 0xb9834c, roughness: 0.86 });
+  const tapeMat = new THREE.MeshStandardMaterial({ color: 0x80603b, roughness: 0.92 });
+  for (const [x, z] of [[-0.52, -0.65], [0.52, -0.65], [-0.52, -1.55], [0.52, -1.55]]) {
+    const carton = box(truck, [0.60, 0.50, 0.56], [x, 1.16, z], cartonMat);
+    box(truck, [0.075, 0.505, 0.565], [x, 1.16, z], tapeMat);
   }
 
-  const tSpotL = new THREE.SpotLight(0xfff4d6, 0, 80, 0.62, 0.45, 1);
-  tSpotL.position.set(-0.88, 0.98, -3.42); tSpotL.target.position.set(-0.88, 0.3, -20);
-  const tSpotR = new THREE.SpotLight(0xfff4d6, 0, 80, 0.62, 0.45, 1);
-  tSpotR.position.set(0.88, 0.98, -3.42); tSpotR.target.position.set(0.88, 0.3, -20);
+  const headLights = [], tailLights = [];
+  for (const side of [-1, 1]) {
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.20, 0.08), headMat);
+    head.position.set(side * 0.88, 1.00, 3.42); truck.add(head); headLights.push(head);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.42, 0.08), tailMat);
+    tail.position.set(side * 1.02, 1.10, -3.50); truck.add(tail); tailLights.push(tail);
+  }
+  const tSpotL = new THREE.SpotLight(0xfff1ce, 0, 78, 0.58, 0.48, 1);
+  const tSpotR = new THREE.SpotLight(0xfff1ce, 0, 78, 0.58, 0.48, 1);
+  tSpotL.position.set(-0.88, 1.0, 3.44); tSpotR.position.set(0.88, 1.0, 3.44);
+  tSpotL.target.position.set(-0.88, 0.25, 22); tSpotR.target.position.set(0.88, 0.25, 22);
   truck.add(tSpotL, tSpotL.target, tSpotR, tSpotR.target);
 
-  // Cab Upper Roof, Windshield & Driver Seat
-  const cabRoof = new THREE.Mesh(new THREE.BoxGeometry(W - 0.16, 0.12, 1.45), cabMat);
-  cabRoof.position.set(0, 2.38, -1.52); cabRoof.castShadow = true; truck.add(cabRoof);
-  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.24, 0.86), glassMat);
-  windshield.position.set(0, 1.92, -2.25); windshield.rotation.x = -Math.PI / 2 + 0.12; truck.add(windshield);
-
-  const steerWheel = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 10, 24), darkMat);
-  steerWheel.position.set(-0.56, 1.48, -1.92); steerWheel.rotation.x = -0.5; truck.add(steerWheel);
-  const driverSeat = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.58), new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.8 }));
-  driverSeat.position.set(-0.56, 1.15, -1.48); truck.add(driverSeat);
-
-  // Openable Truck Bonnet (Hinged at windshield base z = -2.25)
-  const bonnetPivot = new THREE.Group(); bonnetPivot.position.set(0, 1.48, -2.25);
-  const bonnetMesh = new THREE.Mesh(new THREE.BoxGeometry(W - 0.16, 0.08, 1.16), cabMat);
-  bonnetMesh.position.set(0, 0, -0.58); bonnetMesh.castShadow = true;
-  bonnetPivot.add(bonnetMesh); truck.add(bonnetPivot);
-  const bonnetPart = { pivot: bonnetPivot, open: false, angle: 0, maxAngle: 0.72 };
-  aimTargets.push({
-    mesh: bonnetMesh, maxDist: 4.0,
-    getLabel: () => (bonnetPart.open ? "Close Truck Bonnet" : "Open Truck Bonnet"),
-    onInteract: () => { bonnetPart.open = !bonnetPart.open; showToast(`${bonnetPart.open ? 'Opened' : 'Closed'} Truck Bonnet`); }
-  });
-
-  // Openable Truck Driver Door
-  const doorPivot = new THREE.Group(); doorPivot.position.set(-W / 2 + 0.06, 0.82, -2.15);
-  const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.48, 1.12), cabMat);
-  doorPanel.position.set(0, 0.74, 0.56); doorPanel.castShadow = true;
-  const doorWin = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.52), glassMat);
-  doorWin.rotation.y = Math.PI / 2; doorWin.position.set(0, 1.16, 0.56);
-  doorPivot.add(doorPanel, doorWin); truck.add(doorPivot);
-  const doorPart = { pivot: doorPivot, open: false, angle: 0, maxAngle: -1.02 };
-  aimTargets.push({
-    mesh: doorPanel, maxDist: 3.8,
-    getLabel: () => (doorPart.open ? "Get In Truck Cab" : "Open Truck Door"),
-    onInteract: () => {
-      if (doorPart.open) enterVehicle('truck');
-      else { doorPart.open = true; showToast("Opened Truck Driver Door — Aim & Press E to Get In"); }
-    }
-  });
-
-  // Hollow Cargo Box Body (z from -0.75 to +3.45, y from 0.82 to 2.75)
-  const cargoFloor = new THREE.Mesh(new THREE.BoxGeometry(W - 0.12, 0.12, 4.2), darkMat);
-  cargoFloor.position.set(0, 0.82, 1.35); cargoFloor.receiveShadow = true;
-  const cargoRoof = new THREE.Mesh(new THREE.BoxGeometry(W - 0.08, 0.12, 4.24), cargoMat);
-  cargoRoof.position.set(0, 2.78, 1.35); cargoRoof.castShadow = true;
-  const cargoWallL = new THREE.Mesh(new THREE.BoxGeometry(0.10, 1.92, 4.2), cargoMat);
-  cargoWallL.position.set(-W / 2 + 0.09, 1.80, 1.35); cargoWallL.castShadow = true;
-  const cargoWallR = new THREE.Mesh(new THREE.BoxGeometry(0.10, 1.92, 4.2), cargoMat);
-  cargoWallR.position.set(W / 2 - 0.09, 1.80, 1.35); cargoWallR.castShadow = true;
-  const cargoFront = new THREE.Mesh(new THREE.BoxGeometry(W - 0.12, 1.92, 0.12), cargoMat);
-  cargoFront.position.set(0, 1.80, -0.72);
-  truck.add(cargoFloor, cargoRoof, cargoWallL, cargoWallR, cargoFront);
-
-  // Rear Roll-Up / Hinged Shutter at z = +3.45 (Slides UP/opens when interacted with!)
-  const shutterPivot = new THREE.Group();
-  shutterPivot.position.set(0, 2.72, 3.45);
-  const shutterMesh = new THREE.Mesh(new THREE.BoxGeometry(W - 0.24, 1.84, 0.08), new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.6, roughness: 0.4 }));
-  shutterMesh.position.set(0, -0.92, 0);
-  shutterPivot.add(shutterMesh); truck.add(shutterPivot);
-
-  // Shutter swings upward like a rear cargo shutter/door
-  const shutterPart = { pivot: shutterPivot, open: false, angle: 0, maxAngle: -1.35 };
-  aimTargets.push({
-    mesh: shutterMesh, maxDist: 4.2,
-    getLabel: () => (shutterPart.open ? "Close Truck Rear Shutter" : "Open Truck Rear Shutter"),
-    onInteract: () => {
-      shutterPart.open = !shutterPart.open;
-      showToast(`${shutterPart.open ? 'Opened' : 'Closed'} Truck Rear Shutter — Aim at Cartons inside to Carry!`);
-    }
-  });
-
-  // Four detailed cargo cartons retained as model geometry.
-  const cartonMat = new THREE.MeshStandardMaterial({ color: 0xb9834c, roughness: 0.82 });
-  const cartonTape = new THREE.MeshStandardMaterial({ color: 0x80603b, roughness: 0.9 });
-  const cartonCoords = [
-    [-0.52, 1.15, 2.55], [0.52, 1.15, 2.55],
-    [-0.52, 1.15, 1.65], [0.52, 1.15, 1.65]
-  ];
-  for (const [cx_, cy_, cz_] of cartonCoords) {
-    const carton = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.52, 0.58), cartonMat);
-    carton.position.set(cx_, cy_, cz_); carton.castShadow = true; truck.add(carton);
-    const tape = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.525, 0.585), cartonTape);
-    tape.position.copy(carton.position); truck.add(tape);
-  }
-
-  // 6 Heavy Truck Wheels (Front steer, Rear dual/big wheels)
   const wheels = [];
   function makeTruckWheel(x, z, isFront) {
-    const steerGrp = new THREE.Group(); steerGrp.position.set(x, WR, z); truck.add(steerGrp);
+    const steerGrp = new THREE.Group();
+    steerGrp.position.set(x, wheelRadius, z); truck.add(steerGrp);
     const spinGrp = new THREE.Group(); steerGrp.add(spinGrp);
-    const tire = new THREE.Mesh(new THREE.CylinderGeometry(WR, WR, 0.36, 24), new THREE.MeshStandardMaterial({ color: 0x151619, roughness: 0.85 }));
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.38, 26), new THREE.MeshStandardMaterial({ color: 0x111315, roughness: 0.9 }));
     tire.rotation.z = Math.PI / 2; tire.castShadow = true;
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(WR * 0.56, WR * 0.56, 0.38, 16), chromeMat); rim.rotation.z = Math.PI / 2;
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.4, WR * 1.05, 0.07), darkMat);
-    spinGrp.add(tire, rim, spoke);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius * 0.56, wheelRadius * 0.56, 0.40, 18), chrome);
+    rim.rotation.z = Math.PI / 2;
+    spinGrp.add(tire, rim);
     wheels.push({ steerGrp, spinGrp, isFront });
   }
-  makeTruckWheel(-1.12, -2.55, true); makeTruckWheel(1.12, -2.55, true);
-  makeTruckWheel(-1.12,  1.95, false); makeTruckWheel(1.12,  1.95, false);
+  makeTruckWheel(-1.16, 2.28, true); makeTruckWheel(1.16, 2.28, true);
+  makeTruckWheel(-1.16, -1.62, false); makeTruckWheel(1.16, -1.62, false);
+  makeTruckWheel(-1.16, -2.55, false); makeTruckWheel(1.16, -2.55, false);
 
-  truck.userData = { bonnetPart, doorPart, shutterPart, wheels, headLights, tSpotL, tSpotR, WR };
+  truck.userData = { bonnetPart, doorPart, doorParts, shutterPart, wheels, headLights, tSpotL, tSpotR, WR: wheelRadius, forwardSign: 1 };
   return truck;
 }
 
@@ -416,6 +401,6 @@ function buildRebelBike() {
     onInteract: () => enterVehicle('bike')
   });
 
-  bike.userData = { forkPivot, wheels, WR };
+  bike.userData = { forkPivot, wheels, WR, forwardSign: -1 };
   return bike;
 }
