@@ -1,5 +1,5 @@
 import { Renderer } from "../renderer/Renderer.js?build=18";
-import { moveWithCollisions } from "../player/collision.js";
+import { moveWithCollisions } from "../player/collision.js?v=2";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
 export class Game {
@@ -26,6 +26,8 @@ export class Game {
     this.nextHauntCue = 0;
     this.hauntCueIndex = 0;
     this.hauntAppliedTurnOffset = 0;
+    this.stuckPushTimer = 0;
+    this.lastCollisionNormal = { x: 0, z: 0 };
     this.carSpeed = 0;
     this.spareTires = 1;
     this.offroadWear = 0;
@@ -187,7 +189,36 @@ export class Game {
     const startZ = camera.position.z;
     const deltaX = (Math.sin(this.yaw) * forward + Math.cos(this.yaw) * strafe) * speed;
     const deltaZ = (Math.cos(this.yaw) * forward - Math.sin(this.yaw) * strafe) * speed;
-    moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
+    const collisionInfo = { normalX: 0, normalZ: 0 };
+    moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius,
+      this.renderer.getGateCollisionCells(), this.renderer.solidMeshes, collisionInfo);
+    const actualMove = Math.hypot(camera.position.x - startX, camera.position.z - startZ);
+    const intendedMove = Math.hypot(deltaX, deltaZ);
+    if (moving && intendedMove > 0.0005 && actualMove < 0.006) {
+      this.stuckPushTimer += delta;
+      if (Math.hypot(collisionInfo.normalX, collisionInfo.normalZ) > 0.25) {
+        this.lastCollisionNormal.x = collisionInfo.normalX;
+        this.lastCollisionNormal.z = collisionInfo.normalZ;
+      }
+      if (this.stuckPushTimer >= 2) {
+        let nx = this.lastCollisionNormal.x, nz = this.lastCollisionNormal.z;
+        const normalLength = Math.hypot(nx, nz);
+        if (normalLength < 0.25) {
+          const inputLength = Math.hypot(deltaX, deltaZ) || 1;
+          nx = -deltaX / inputLength; nz = -deltaZ / inputLength;
+        } else { nx /= normalLength; nz /= normalLength; }
+        const recovery = PLAYER_CONFIG.radius * 1.35;
+        moveWithCollisions(camera.position, nx * recovery, nz * recovery,
+          PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
+        this.stuckPushTimer = 0;
+        this.lastCollisionNormal.x = 0; this.lastCollisionNormal.z = 0;
+        this.showGameToast("You were caught against something. You step back to clear it.");
+      }
+    } else {
+      this.stuckPushTimer = 0;
+      this.lastCollisionNormal.x = collisionInfo.normalX;
+      this.lastCollisionNormal.z = collisionInfo.normalZ;
+    }
     const floorOffset = this.renderer.getFloorOffsetAt(camera.position.x, camera.position.z);
     camera.position.y = 1.62 + floorOffset;
     this.renderer.setInteriorFloorLevel(floorOffset);
