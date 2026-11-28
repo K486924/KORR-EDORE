@@ -242,12 +242,12 @@ export class Game {
     const collisionInfo = { normalX: 0, normalZ: 0 };
     moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius,
       this.renderer.getGateCollisionCells(), this.renderer.solidMeshes, collisionInfo);
-    const actualX = camera.position.x - startX;
-    const actualZ = camera.position.z - startZ;
-    const actualMove = Math.hypot(actualX, actualZ);
+    const progressX = camera.position.x - startX;
+    const progressZ = camera.position.z - startZ;
+    const actualMove = Math.hypot(progressX, progressZ);
     const intendedMove = Math.hypot(deltaX, deltaZ);
     const forwardProgress = intendedMove > 1e-6
-      ? (actualX * deltaX + actualZ * deltaZ) / intendedMove : 0;
+      ? (progressX * deltaX + progressZ * deltaZ) / intendedMove : 0;
     // Sliding along a wall is not progress if the player is still pushing into it.
     if (moving && intendedMove > 0.0005 && forwardProgress < 0.002) {
       this.stuckPushTimer += delta;
