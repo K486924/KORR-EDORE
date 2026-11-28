@@ -616,6 +616,7 @@ export class Game {
     this.yaw = this.vehicleYaw + ((vehicle.userData?.forwardSign || -1) > 0 ? Math.PI : 0);
     this.pitch = type === "bike" ? -0.08 : -0.04;
     document.body.classList.add("in-vehicle");
+    document.body.classList.toggle("bike-controls-active", type === "bike");
     const hud = document.querySelector("#vehicle-hud");
     const controls = document.querySelector("#vehicle-controls");
     if (hud) {
@@ -674,7 +675,7 @@ export class Game {
     this.inVehicle = false; this.currentVehicle = null; this.currentVehicleType = null; this.vehicleSpeed = 0;
     this.vehicleButtons.clear();
     this.vehicleInput = { throttle:0, steering:0, brake:0, handbrake:0, clutch:0, pedalBrake:0 };
-    document.body.classList.remove("in-vehicle");
+    document.body.classList.remove("in-vehicle", "bike-controls-active");
     this.renderer.camera.position.set(safePosition.x, safePosition.y, safePosition.z);
     this.yaw = yaw + (forwardSign > 0 ? Math.PI : 0); this.pitch = 0;
     this.renderer.camera.rotation.set(0,this.yaw,0,"YXZ");
