@@ -23,13 +23,13 @@ export function createFarmhouseInterior(scene, interactions) {
 
   // The interior is a separate level. Its wall meshes and collision boxes are
   // deliberately the same objects, so visible architecture and collision agree.
-  box([15.25, 0.30, 15.15], [0, 0.10, -6.25], floor, root, false);
+  box([36.0, 0.30, 20.0], [0, 0.10, -8.4], floor, root, false);
   const wallH = 3.35, wallY = 1.925, thick = 0.28;
-  box([5.05, wallH, thick], [-5.05, wallY, 1.25], plaster, root, true);
-  box([5.05, wallH, thick], [5.05, wallY, 1.25], plaster, root, true);
-  box([thick, wallH, 15.15], [-7.62, wallY, -6.25], plaster, root, true);
-  box([thick, wallH, 15.15], [7.62, wallY, -6.25], plaster, root, true);
-  box([15.25, wallH, thick], [0, wallY, -13.82], plaster, root, true);
+  box([15.45, wallH, thick], [-10.25, wallY, 1.25], plaster, root, true);
+  box([15.45, wallH, thick], [10.25, wallY, 1.25], plaster, root, true);
+  box([thick, wallH, 19.0], [-18.0, wallY, -8.4], plaster, root, true);
+  box([thick, wallH, 19.0], [18.0, wallY, -8.4], plaster, root, true);
+  box([36.0, wallH, thick], [0, wallY, -17.9], plaster, root, true);
 
   // Internal room dividers leave proper doorways and a clear central hall.
   for (const x of [-2.25, 2.25]) {
@@ -45,19 +45,19 @@ export function createFarmhouseInterior(scene, interactions) {
 
   // Upper floor with a deliberately open stairwell.
   const upperY = 3.55;
-  box([7.6, 0.22, 15.0], [-3.8, upperY, -6.25], floor);
-  box([4.0, 0.22, 15.0], [2.0, upperY, -6.25], floor);
-  box([1.6, 0.22, 15.0], [6.8, upperY, -6.25], floor);
+  box([7.6, 0.22, 19.5], [-3.8, upperY, -8.4], floor);
+  box([4.0, 0.22, 19.5], [2.0, upperY, -8.4], floor);
+  box([1.6, 0.22, 19.5], [6.8, upperY, -8.4], floor);
   box([2.0, 0.22, 6.0], [5.0, upperY, -10.75], floor);
   box([2.0, 0.22, 2.7], [5.0, upperY, -0.35], floor);
   const upperSolidStart = solidMeshes.length;
   // Upper-storey perimeter walls keep the landing and bedrooms enclosed.
-  box([thick, 2.85, 15.15], [-7.62, 5.05, -6.25], plaster, root, true);
-  box([thick, 2.85, 15.15], [7.62, 5.05, -6.25], plaster, root, true);
-  box([15.25, 2.85, thick], [0, 5.05, -13.82], plaster, root, true);
-  box([5.05, 2.85, thick], [-5.05, 5.05, 1.25], plaster, root, true);
-  box([5.05, 2.85, thick], [5.05, 5.05, 1.25], plaster, root, true);
-  box([5.15, 2.85, thick], [0, 5.05, 1.25], plaster, root, true);
+  box([thick, 2.85, 19.0], [-18.0, 5.05, -8.4], plaster, root, true);
+  box([thick, 2.85, 19.0], [18.0, 5.05, -8.4], plaster, root, true);
+  box([36.0, 2.85, thick], [0, 5.05, -17.9], plaster, root, true);
+  box([15.45, 2.85, thick], [-10.25, 5.05, 1.25], plaster, root, true);
+  box([15.45, 2.85, thick], [10.25, 5.05, 1.25], plaster, root, true);
+  // The central upper landing stays open above the grand entrance.
   // Upstairs partitions and bedroom openings.
   for (const x of [-2.15, 2.15]) {
     box([thick, 2.85, 1.2], [x, 5.05, -8.0], plaster, root, true);
