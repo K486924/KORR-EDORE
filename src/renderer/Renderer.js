@@ -325,9 +325,9 @@ export class Renderer {
     // Two lower side wings from the player's farmhouse sketches.
     for (const side of [-1, 1]) {
       const cx = side * 20.5;
-      box([5.0, 0.28, 15.0], [cx, 0.18, -6.2], foundation);
+      box([5.0, 0.28, 19.5], [cx, 0.18, -8.0], foundation);
       solidBox([4.9, 2.95, 0.30], [cx, 1.72, 1.25], plaster);
-      solidBox([4.9, 2.95, 0.30], [cx, 1.72, -13.55], plaster);
+      solidBox([4.9, 2.95, 0.30], [cx, 1.72, -17.5], plaster);
       solidBox([0.30, 2.95, 19.0], [side * 23.0, 1.72, -8.0], plaster);
       // Recessed wing windows, timber frames and warm interior glazing.
       for (const z of [-10.8, -6.2, -1.6]) {
@@ -337,13 +337,13 @@ export class Renderer {
         box([0.06, 0.055, 1.12], [side * 22.72, 1.9, z], wood, world, false);
       }
       // Separate lower pitched roof on each wing.
-      const wingRoofA = box([3.0, 0.32, 15.8], [cx - side * 1.25, 3.45, -6.2], roofMat);
+      const wingRoofA = box([3.0, 0.32, 20.2], [cx - side * 1.25, 3.45, -8.0], roofMat);
       wingRoofA.rotation.z = side * 0.38;
-      const wingRoofB = box([3.0, 0.32, 15.8], [cx + side * 1.25, 3.45, -6.2], roofMat);
+      const wingRoofB = box([3.0, 0.32, 20.2], [cx + side * 1.25, 3.45, -8.0], roofMat);
       wingRoofB.rotation.z = -side * 0.38;
-      box([0.18, 0.34, 15.9], [cx, 4.02, -6.2], roofMat);
+      box([0.18, 0.34, 20.3], [cx, 4.02, -8.0], roofMat);
       // Covered side veranda posts and a simple timber fascia.
-      for (const z of [-12.4, -8.3, -4.1, 0.0]) {
+      for (const z of [-16.0, -11.0, -6.0, -1.0]) {
         box([0.18, 2.7, 0.18], [side * 23.2, 1.42, z], wood);
       }
     }
