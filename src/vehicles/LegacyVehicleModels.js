@@ -199,15 +199,15 @@ function buildCargoTruck() {
 
   // Chassis and cargo compartment are independent; cargo ends behind the cab.
   box(truck, [2.05, 0.22, 6.85], [0, 0.58, -0.02], dark);
-  box(truck, [2.18, 0.12, 4.00], [0, 0.83, -1.43], dark);             // cargo floor
+  box(truck, [1.90, 0.12, 4.00], [0, 0.83, -1.43], dark);             // cargo floor, clear of rear tyres
   box(truck, [2.18, 0.12, 4.00], [0, 2.79, -1.43], cargoPaint);       // cargo roof
-  box(truck, [0.10, 1.88, 4.00], [-1.13, 1.82, -1.43], cargoPaint);   // left wall
-  box(truck, [0.10, 1.88, 4.00], [1.13, 1.82, -1.43], cargoPaint);    // right wall
+  box(truck, [0.10, 1.58, 4.00], [-1.13, 1.97, -1.43], cargoPaint);   // left wall; raised over wheel clearance
+  box(truck, [0.10, 1.58, 4.00], [1.13, 1.97, -1.43], cargoPaint);    // right wall
   box(truck, [2.18, 1.88, 0.10], [0, 1.82, 0.57], cargoPaint);        // front wall
   // The rear opening is clear when the top-hinged cargo door is raised.
 
   // Cab floor and separate engine bay at the forward end.
-  box(truck, [2.18, 0.14, 1.55], [0, 0.80, 1.55], dark);
+  box(truck, [1.90, 0.14, 1.55], [0, 0.80, 1.55], dark);
   box(truck, [1.72, 0.42, 0.76], [0, 0.91, 2.92], dark);
   box(truck, [0.92, 0.30, 0.55], [0, 1.05, 2.88], dark);
   box(truck, [2.44, 0.26, 0.18], [0, 0.68, 3.42], dark);            // front bumper
@@ -250,7 +250,7 @@ function buildCargoTruck() {
     pivot.position.set(side * 1.17, 0.78, 2.34);
     truck.add(pivot);
     const centerZ = -0.70;
-    const panel = box(pivot, [0.08, 0.72, 1.38], cabPaint, [0, 0.36, centerZ]);
+    const panel = box(pivot, [0.08, 0.46, 1.38], cabPaint, [0, 0.50, centerZ]);
     const window = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.54), glass);
     window.rotation.y = side * Math.PI / 2;
     window.position.set(side * 0.041, 1.05, centerZ);
