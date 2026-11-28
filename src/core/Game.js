@@ -1,4 +1,4 @@
-import { Renderer } from "../renderer/Renderer.js?build=23";
+import { Renderer } from "../renderer/Renderer.js?build=24";
 import { moveWithCollisions } from "../player/collision.js?v=3";
 import { PLAYER_CONFIG, PHYSICS_CONFIG } from "../config/physics.js";
 
