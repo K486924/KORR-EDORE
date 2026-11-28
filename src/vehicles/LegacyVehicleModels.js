@@ -98,15 +98,15 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
     pivot.position.set(side * 0.91, 0.52, frontHinge ? 0.94 : -0.94);
     car.add(pivot);
     const centerZ = frontHinge ? -length / 2 : length / 2;
-    const panel = box(pivot, [0.075, 0.50, length], paint, [0, 0.25, centerZ]);
-    box(pivot, [0.055, 0.055, length - 0.07], trim, [side * 0.018, 0.98, centerZ]);
+    const panel = box(pivot, [0.075, 0.50, length], [0, 0.25, centerZ], paint);
+    box(pivot, [0.055, 0.055, length - 0.07], [side * 0.018, 0.98, centerZ], trim);
     const window = new THREE.Mesh(new THREE.PlaneGeometry(length - 0.12, 0.43), glass);
     window.rotation.y = side * Math.PI / 2;
     window.position.set(side * 0.039, 0.76, centerZ);
     pivot.add(window);
-    box(pivot, [0.045, 0.045, length - 0.10], paint, [side * 0.035, 0.53, centerZ]);
-    const handle = box(pivot, [0.035, 0.045, 0.13], chrome,
-      [side * 0.065, 0.43, centerZ + (frontHinge ? 0.20 : -0.20)]);
+    box(pivot, [0.045, 0.045, length - 0.10], [side * 0.035, 0.53, centerZ], paint);
+    const handle = box(pivot, [0.035, 0.045, 0.13],
+      [side * 0.065, 0.43, centerZ + (frontHinge ? 0.20 : -0.20)], chrome);
     const maxAngle = (frontHinge ? -side : side) * (Math.PI / 3);
     const part = { pivot, panel, window, open: false, angle: 0, maxAngle, label };
     parts[name] = part;
@@ -123,7 +123,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
 
   const hoodPivot = new THREE.Group();
   hoodPivot.position.set(0, 1.08, 0.94);
-  const hoodMesh = box(hoodPivot, [1.72, 0.06, 1.02], paint, [0, 0, 0.51]);
+  const hoodMesh = box(hoodPivot, [1.72, 0.06, 1.02], [0, 0, 0.51], paint);
   car.add(hoodPivot);
   parts.hood = { pivot: hoodPivot, open: false, angle: 0, maxAngle: -50 * Math.PI / 180 };
   aimTargets.push({ mesh: hoodMesh, maxDist: 3.8,
@@ -133,7 +133,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
 
   const trunkPivot = new THREE.Group();
   trunkPivot.position.set(0, 1.08, -0.94);
-  const trunkMesh = box(trunkPivot, [1.72, 0.06, 1.00], paint, [0, 0, -0.50]);
+  const trunkMesh = box(trunkPivot, [1.72, 0.06, 1.00], [0, 0, -0.50], paint);
   car.add(trunkPivot);
   parts.trunk = { pivot: trunkPivot, open: false, angle: 0, maxAngle: 55 * Math.PI / 180 };
   aimTargets.push({ mesh: trunkMesh, maxDist: 3.8,
@@ -236,7 +236,7 @@ function buildCargoTruck() {
 
   const bonnetPivot = new THREE.Group();
   bonnetPivot.position.set(0, 1.38, 2.48);
-  const bonnetMesh = box(bonnetPivot, [2.12, 0.07, 0.88], cabPaint, [0, 0, 0.44]);
+  const bonnetMesh = box(bonnetPivot, [2.12, 0.07, 0.88], [0, 0, 0.44], cabPaint);
   truck.add(bonnetPivot);
   const bonnetPart = { pivot: bonnetPivot, open: false, angle: 0, maxAngle: -50 * Math.PI / 180 };
   aimTargets.push({ mesh: bonnetMesh, maxDist: 4.0,
@@ -250,13 +250,13 @@ function buildCargoTruck() {
     pivot.position.set(side * 1.17, 0.78, 2.34);
     truck.add(pivot);
     const centerZ = -0.70;
-    const panel = box(pivot, [0.08, 0.46, 1.38], cabPaint, [0, 0.50, centerZ]);
+    const panel = box(pivot, [0.08, 0.46, 1.38], [0, 0.50, centerZ], cabPaint);
     const window = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.54), glass);
     window.rotation.y = side * Math.PI / 2;
     window.position.set(side * 0.041, 1.05, centerZ);
     pivot.add(window);
-    box(pivot, [0.06, 0.06, 1.28], cabPaint, [0, 1.38, centerZ]);
-    box(pivot, [0.06, 0.06, 1.28], dark, [0, 0.74, centerZ]);
+    box(pivot, [0.06, 0.06, 1.28], [0, 1.38, centerZ], cabPaint);
+    box(pivot, [0.06, 0.06, 1.28], [0, 0.74, centerZ], dark);
     const part = { pivot, panel, window, open: false, angle: 0, maxAngle: -side * (Math.PI / 3), label };
     doorParts.push(part);
     aimTargets.push({
@@ -271,7 +271,7 @@ function buildCargoTruck() {
 
   const shutterPivot = new THREE.Group();
   shutterPivot.position.set(0, 2.72, -3.49);
-  const shutterMesh = box(shutterPivot, [2.12, 1.82, 0.08], chrome, [0, -0.91, 0]);
+  const shutterMesh = box(shutterPivot, [2.12, 1.82, 0.08], [0, -0.91, 0], chrome);
   truck.add(shutterPivot);
   const shutterPart = { pivot: shutterPivot, open: false, angle: 0, maxAngle: 1.48 };
   aimTargets.push({ mesh: shutterMesh, maxDist: 4.2,
