@@ -617,7 +617,14 @@ export class Renderer {
       const headPivot = new THREE.Group();
       headPivot.position.set(0, 1.52, 0.008);
       const head = new THREE.Mesh(new THREE.CircleGeometry(0.155, 18), shadowMaterial);
+      head.scale.x = 0.82;
       headPivot.add(head);
+      const profile = new THREE.Shape();
+      profile.moveTo(0.10, 0.025);
+      profile.lineTo(0.235, -0.035);
+      profile.lineTo(0.10, -0.095);
+      profile.closePath();
+      headPivot.add(new THREE.Mesh(new THREE.ShapeGeometry(profile), shadowMaterial));
       group.add(headPivot);
       root.add(group);
       group.visible = false;
@@ -705,7 +712,7 @@ export class Renderer {
       if (cycle > 18 && cycle < 22) {
         const pulse = Math.sin(((cycle - 18) / 4) * Math.PI);
         turnOffset = pulse * 0.68;
-        forwardDrift = pulse * 0.34;
+        forwardDrift = pulse * -0.34;
       }
     }
     return { turnOffset, forwardDrift };
