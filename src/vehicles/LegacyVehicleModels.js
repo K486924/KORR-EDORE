@@ -56,7 +56,7 @@ function buildDetailedSedan(paintHex = 0x8b1e24) {
 
   // Engine sits below the closed bonnet; no loose parts protrude through it.
   box(car, [0.78, 0.30, 0.66], [0, 0.78, 1.43], trim);
-  box(car, [0.36, 0.12, 0.34], [-0.38, 0.91, 1.38], chrome);
+  // Keep the engine bay visually recessed; no loose trim blocks sit on the bonnet.
 
   // Cabin shell, pillars and roof.
   box(car, [1.56, 0.10, 1.68], [0, 1.72, 0], paint);
