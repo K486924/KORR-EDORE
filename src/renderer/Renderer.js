@@ -621,12 +621,12 @@ export class Renderer {
       group.add(headPivot);
       root.add(group);
       group.visible = false;
-      return { group, headPivot, base: group.position.clone() };
+      return { group, headPivot, base: group.position.clone(), slideAxis: Math.abs(rotationY) > 1 ? "z" : "x" };
     };
     const shadows = [
-      makeShadow([-4.8, 0.62, -13.665], 0, 1.0),
-      makeShadow([7.465, 0.62, -9.0], -Math.PI / 2, 0.92),
-      makeShadow([-7.465, 0.62, -5.0], Math.PI / 2, 0.88)
+      makeShadow([-4.8, 4.02, -13.665], 0, 1.0),
+      makeShadow([7.465, 4.02, -9.0], -Math.PI / 2, 0.92),
+      makeShadow([-7.465, 4.02, -5.0], Math.PI / 2, 0.88)
     ];
     const fireLight = new THREE.PointLight(0xff6a27, 0, 10, 2);
     fireLight.position.set(0, 4.08, -10.65);
@@ -689,7 +689,9 @@ export class Renderer {
     }
     if (effects.night >= 3) {
       effects.shadows.forEach((shadow, i) => {
-        shadow.group.position.x = shadow.base.x + Math.sin(t * (0.72 + i * 0.13) + i) * (i === 0 ? 0.20 : 0.12);
+        const slide = Math.sin(t * (0.72 + i * 0.13) + i) * (i === 0 ? 0.20 : 0.12);
+        shadow.group.position.x = shadow.base.x + (shadow.slideAxis === "x" ? slide : 0);
+        shadow.group.position.z = shadow.base.z + (shadow.slideAxis === "z" ? slide : 0);
         shadow.group.position.y = shadow.base.y + Math.sin(t * (1.1 + i * 0.2) + i * 1.7) * 0.10;
         shadow.group.rotation.z = Math.sin(t * 0.8 + i * 2.1) * 0.045;
       });
