@@ -27,8 +27,12 @@ export function createFarmhouseInterior(scene, interactions) {
   const wallH = 3.35, wallY = 1.925, thick = 0.28;
   box([15.45, wallH, thick], [-10.25, wallY, 1.25], plaster, root, true);
   box([15.45, wallH, thick], [10.25, wallY, 1.25], plaster, root, true);
-  box([thick, wallH, 19.0], [-18.0, wallY, -8.4], plaster, root, true);
-  box([thick, wallH, 19.0], [18.0, wallY, -8.4], plaster, root, true);
+  // Wide passages connect the central hall to both mansion wings.
+  box([thick, wallH, 7.0], [-18.0, wallY, -2.4], plaster, root, true);
+  box([thick, wallH, 7.0], [-18.0, wallY, -14.4], plaster, root, true);
+  // Wide passages connect the central hall to both mansion wings.
+  box([thick, wallH, 7.0], [18.0, wallY, -2.4], plaster, root, true);
+  box([thick, wallH, 7.0], [18.0, wallY, -14.4], plaster, root, true);
   box([36.0, wallH, thick], [0, wallY, -17.9], plaster, root, true);
 
   // Internal room dividers leave proper doorways and a clear central hall.
@@ -48,12 +52,17 @@ export function createFarmhouseInterior(scene, interactions) {
   box([7.6, 0.22, 19.5], [-3.8, upperY, -8.4], floor);
   box([4.0, 0.22, 19.5], [2.0, upperY, -8.4], floor);
   box([1.6, 0.22, 19.5], [6.8, upperY, -8.4], floor);
+  // Upper-floor side wings make the second storey a full mansion level.
+  box([10.0, 0.22, 19.5], [-12.8, upperY, -8.4], floor);
+  box([10.0, 0.22, 19.5], [12.8, upperY, -8.4], floor);
   box([2.0, 0.22, 6.0], [5.0, upperY, -10.75], floor);
   box([2.0, 0.22, 2.7], [5.0, upperY, -0.35], floor);
   const upperSolidStart = solidMeshes.length;
   // Upper-storey perimeter walls keep the landing and bedrooms enclosed.
-  box([thick, 2.85, 19.0], [-18.0, 5.05, -8.4], plaster, root, true);
-  box([thick, 2.85, 19.0], [18.0, 5.05, -8.4], plaster, root, true);
+  box([thick, 2.85, 7.0], [-18.0, 5.05, -2.4], plaster, root, true);
+  box([thick, 2.85, 7.0], [-18.0, 5.05, -14.4], plaster, root, true);
+  box([thick, 2.85, 7.0], [18.0, 5.05, -2.4], plaster, root, true);
+  box([thick, 2.85, 7.0], [18.0, 5.05, -14.4], plaster, root, true);
   box([36.0, 2.85, thick], [0, 5.05, -17.9], plaster, root, true);
   box([15.45, 2.85, thick], [-10.25, 5.05, 1.25], plaster, root, true);
   box([15.45, 2.85, thick], [10.25, 5.05, 1.25], plaster, root, true);
