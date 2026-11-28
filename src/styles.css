@@ -366,7 +366,7 @@ body.game-active #main-menu, body.game-active #loading-screen { display: none !i
 
 /* Unified vehicle cockpit controls. */
 body.in-vehicle #touch-pad, body.in-vehicle #sprint-button, body.in-vehicle #interact-button { display:none !important; }
-#vehicle-hud { top:max(12px,env(safe-area-inset-top)); bottom:auto; z-index:22; display:flex; flex-wrap:wrap; justify-content:center; pointer-events:auto; }
+#vehicle-hud { top:max(96px,calc(env(safe-area-inset-top) + 96px)); bottom:auto; z-index:22; display:flex; flex-wrap:wrap; justify-content:center; pointer-events:auto; }
 #vehicle-hud[hidden], #vehicle-controls[hidden] { display:none !important; }
 .vehicle-gear { display:inline-flex; align-items:center; gap:6px; }
 .vehicle-gear button { width:27px; height:27px; border:1px solid #c5ad7a77; border-radius:7px; color:#f0e5d1; background:#1c211c; font-weight:800; touch-action:manipulation; }
