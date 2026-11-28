@@ -57,6 +57,7 @@ export class Game {
       if (down && !event.repeat && key === "f") this.syncFlashlightButton(this.renderer.toggleFlashlight());
       if (down && !event.repeat && key === "l" && this.inVehicle) this.toggleVehicleLights();
       if (down && !event.repeat && key === "e") this.handleContextInteraction();
+      if (key === " ") { down ? this.keys.add(" ") : this.keys.delete(" "); event.preventDefault(); }
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
         event.preventDefault();
         down ? this.keys.add(key) : this.keys.delete(key);
@@ -639,20 +640,21 @@ export class Game {
       [sideDistance,-forwardSign*1.2],[-sideDistance,-forwardSign*1.2]];
     let safePosition = null;
     for (const [lx,lz] of offsets) {
-      const candidate = new THREE.Vector3(
-        v.position.x + Math.cos(yaw)*lx + Math.sin(yaw)*lz, 1.62,
-        v.position.z - Math.sin(yaw)*lx + Math.cos(yaw)*lz
-      );
-      const original = candidate.clone();
+      const candidate = {
+        x: v.position.x + Math.cos(yaw)*lx + Math.sin(yaw)*lz,
+        y: 1.62,
+        z: v.position.z - Math.sin(yaw)*lx + Math.cos(yaw)*lz
+      };
+      const original = { x: candidate.x, y: candidate.y, z: candidate.z };
       moveWithCollisions(candidate,0,0,PLAYER_CONFIG.radius,this.renderer.getGateCollisionCells(),this.renderer.solidMeshes);
-      if (candidate.distanceTo(original) < 0.08) { safePosition = original; break; }
+      if (Math.hypot(candidate.x-original.x,candidate.z-original.z) < 0.08) { safePosition = original; break; }
     }
     if (!safePosition) { this.showGameToast("No safe space to step out here. Move the vehicle first."); return; }
     this.inVehicle = false; this.currentVehicle = null; this.currentVehicleType = null; this.vehicleSpeed = 0;
     this.vehicleButtons.clear();
     this.vehicleInput = { throttle:0, steering:0, brake:0, handbrake:0, clutch:0, pedalBrake:0 };
     document.body.classList.remove("in-vehicle");
-    this.renderer.camera.position.copy(safePosition);
+    this.renderer.camera.position.set(safePosition.x, safePosition.y, safePosition.z);
     this.yaw = yaw + (forwardSign > 0 ? Math.PI : 0); this.pitch = 0;
     this.renderer.camera.rotation.set(0,this.yaw,0,"YXZ");
     const hud=document.querySelector("#vehicle-hud"), controls=document.querySelector("#vehicle-controls");
