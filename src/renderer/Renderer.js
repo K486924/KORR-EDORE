@@ -6,7 +6,7 @@ import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 import { InteractionSystem } from "../interaction/InteractionSystem.js?v=8";
 import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=2";
-import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=7";
+import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=8";
 
 export class Renderer {
   constructor(canvas) {
@@ -581,12 +581,132 @@ export class Renderer {
 
   buildInteriorLevel() {
     this.interiorLevel = createFarmhouseInterior(this.scene, this.interactions);
+    this.buildHauntingEffects();
     this.interiorLevel.root.visible = false;
     this.indoorSolidMeshes = this.interiorLevel.solidMeshes;
     this.indoorTargets = this.interactions.targets.slice(this.outdoorTargets.length);
     this.interactions.targets = this.outdoorTargets;
     this.activeLevel = "outdoor";
     this.currentInteriorFloorOffset = 0;
+  }
+
+  buildHauntingEffects() {
+    const root = this.interiorLevel.root;
+    const shadowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x030504, transparent: true, opacity: 0,
+      depthWrite: false, side: THREE.DoubleSide
+    });
+    const makeShadow = (position, rotationY = 0, scale = 1) => {
+      const group = new THREE.Group();
+      group.position.set(...position);
+      group.rotation.y = rotationY;
+      group.scale.setScalar(scale);
+      const polygon = points => {
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0][0], points[0][1]);
+        for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1]);
+        shape.closePath();
+        const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), shadowMaterial);
+        group.add(mesh);
+      };
+      polygon([[-0.22,0.55],[-0.28,0.95],[-0.18,1.42],[0.18,1.42],[0.28,0.95],[0.22,0.55],[0.10,0.40],[-0.10,0.40]]);
+      polygon([[-0.19,1.28],[-0.38,1.18],[-0.48,0.72],[-0.39,0.66],[-0.13,1.00]]);
+      polygon([[0.19,1.28],[0.38,1.18],[0.48,0.72],[0.39,0.66],[0.13,1.00]]);
+      polygon([[-0.16,0.58],[-0.08,0.58],[-0.12,0.08],[-0.25,0.02],[-0.29,0.10]]);
+      polygon([[0.08,0.58],[0.16,0.58],[0.29,0.10],[0.25,0.02],[0.12,0.08]]);
+      const headPivot = new THREE.Group();
+      headPivot.position.set(0, 1.52, 0.008);
+      const head = new THREE.Mesh(new THREE.CircleGeometry(0.155, 18), shadowMaterial);
+      headPivot.add(head);
+      group.add(headPivot);
+      root.add(group);
+      group.visible = false;
+      return { group, headPivot, base: group.position.clone() };
+    };
+    const shadows = [
+      makeShadow([-4.8, 0.62, -13.665], 0, 1.0),
+      makeShadow([7.465, 0.62, -9.0], -Math.PI / 2, 0.92),
+      makeShadow([-7.465, 0.62, -5.0], Math.PI / 2, 0.88)
+    ];
+    const fireLight = new THREE.PointLight(0xff6a27, 0, 10, 2);
+    fireLight.position.set(0, 4.08, -10.65);
+    root.add(fireLight);
+    const flameMaterial = new THREE.MeshStandardMaterial({
+      color: 0xff5a1f, emissive: 0xff3b0b, emissiveIntensity: 1.8,
+      roughness: 0.65, transparent: true, opacity: 0.92
+    });
+    const innerFlameMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffd17a, emissive: 0xff9a2c, emissiveIntensity: 2.0,
+      roughness: 0.55, transparent: true, opacity: 0.9
+    });
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.62, 8), flameMaterial);
+    flame.position.set(0, 3.98, -10.65);
+    const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.38, 7), innerFlameMaterial);
+    innerFlame.position.set(0, 4.03, -10.65);
+    root.add(flame, innerFlame);
+    flame.visible = false;
+    innerFlame.visible = false;
+    this.hauntingEffects = {
+      night: 0, elapsed: 0, shadows, shadowMaterial, fireLight, flame, innerFlame
+    };
+  }
+
+  setHauntNight(night) {
+    const effects = this.hauntingEffects;
+    if (!effects) return;
+    effects.night = Math.max(1, Math.floor(night));
+    const visible = effects.night >= 2;
+    effects.fireLight.visible = visible;
+    effects.flame.visible = visible;
+    effects.innerFlame.visible = visible;
+    effects.shadows.forEach(shadow => { shadow.group.visible = visible; });
+    effects.shadowMaterial.opacity = visible ? (effects.night >= 3 ? 0.72 : 0.48) : 0;
+    if (visible) {
+      const ritual = this.interiorLevel?.ritualState;
+      if (ritual?.ring?.material?.color) {
+        ritual.ring.material.color.setHex(0x9b2922);
+        if (ritual.ring.material.emissive) {
+          ritual.ring.material.emissive.setHex(0x67110d);
+          ritual.ring.material.emissiveIntensity = 0.75;
+        }
+      }
+    }
+  }
+
+  updateHaunting(delta, nightTimer = 0) {
+    const effects = this.hauntingEffects;
+    if (!effects || effects.night < 1) return null;
+    effects.elapsed += delta;
+    const t = effects.elapsed;
+    if (effects.night >= 2) {
+      const flicker = 0.78 + (Math.sin(t * 13.7) * 0.5 + 0.5) * 0.72 +
+        (Math.sin(t * 23.1) * 0.5 + 0.5) * 0.22;
+      effects.fireLight.intensity = flicker * 2.1;
+      effects.flame.scale.y = 0.82 + Math.sin(t * 17.0) * 0.12;
+      effects.innerFlame.scale.y = 0.86 + Math.sin(t * 21.0 + 1.2) * 0.16;
+      const ritual = this.interiorLevel?.ritualState;
+      if (ritual?.light) ritual.light.intensity = 0.45 + flicker * 0.75;
+    }
+    if (effects.night >= 3) {
+      effects.shadows.forEach((shadow, i) => {
+        shadow.group.position.x = shadow.base.x + Math.sin(t * (0.72 + i * 0.13) + i) * (i === 0 ? 0.20 : 0.12);
+        shadow.group.position.y = shadow.base.y + Math.sin(t * (1.1 + i * 0.2) + i * 1.7) * 0.10;
+        shadow.group.rotation.z = Math.sin(t * 0.8 + i * 2.1) * 0.045;
+      });
+    }
+    let turnOffset = 0, forwardDrift = 0;
+    if (effects.night >= 4) {
+      effects.shadows.forEach((shadow, i) => {
+        shadow.headPivot.rotation.z = Math.sin(t * (0.85 + i * 0.11) + i) * 0.38;
+      });
+      const cycle = nightTimer % 34;
+      if (cycle > 18 && cycle < 22) {
+        const pulse = Math.sin(((cycle - 18) / 4) * Math.PI);
+        turnOffset = pulse * 0.68;
+        forwardDrift = pulse * 0.34;
+      }
+    }
+    return { turnOffset, forwardDrift };
   }
 
   enterInterior() {
@@ -656,9 +776,8 @@ export class Renderer {
     if (!state || state.started) return false;
     state.started = true;
     if (state.chamber) state.chamber.userData.started = true;
-    state.ring.material.color.setHex(0x9b2922);
-    state.ring.material.emissive?.setHex(0x67110d);
-    if (state.ring.material.emissive) state.ring.material.emissiveIntensity = 1.35;
+    // Night one is deliberately audio-only. Visible phenomena begin on night two.
+    state.light.intensity = 0;
     return true;
   }
 
@@ -958,10 +1077,6 @@ export class Renderer {
     if (ritualDoor) {
       ritualDoor.angle += ((ritualDoor.open ? 1.28 : 0) - ritualDoor.angle) * (1 - Math.exp(-dt * 6.5));
       for (const leaf of ritualDoor.hinges) leaf.hinge.rotation.y = leaf.side * ritualDoor.angle;
-    }
-    const ritualState = this.interiorLevel?.ritualState;
-    if (ritualState?.started && ritualState.light) {
-      ritualState.light.intensity = 1.1 + (Math.sin(this.elapsed * 5.4) * 0.5 + 0.5) * 1.6;
     }
     if (this.gateLeaves) {
       const gateAlpha = 1 - Math.exp(-dt * 2.4);
