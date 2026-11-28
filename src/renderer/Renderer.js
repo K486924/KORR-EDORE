@@ -208,7 +208,7 @@ export class Renderer {
       const hinge = new THREE.Group();
       hinge.position.set(side * 1.5, 0.32, 1.5);
       world.add(hinge);
-      const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.65, 0.14), wood);
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.65, 0.14), wood);
       leaf.position.set(-side * 0.75, 1.325, 0);
       leaf.castShadow = true; leaf.receiveShadow = true;
       hinge.add(leaf);
