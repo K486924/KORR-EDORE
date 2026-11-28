@@ -687,6 +687,40 @@ export class Game {
     if (button) button.textContent="INTERACT · E";
   }
 
+  moveVehicleWithFootprint(vehicle, dx, dz, type) {
+    const yaw = vehicle.rotation.y;
+    const halfWidth = type === "truck" ? 1.20 : type === "bike" ? 0.43 : 0.94;
+    const halfLength = type === "truck" ? 3.42 : type === "bike" ? 0.92 : 2.02;
+    const points = [
+      [-halfWidth, -halfLength], [0, -halfLength], [halfWidth, -halfLength],
+      [-halfWidth, 0], [0, 0], [halfWidth, 0],
+      [-halfWidth, halfLength], [0, halfLength], [halfWidth, halfLength]
+    ];
+    const cells = this.renderer.getGateCollisionCells();
+    const clearAt = fraction => {
+      for (const [lx, lz] of points) {
+        const ox = Math.cos(yaw) * lx + Math.sin(yaw) * lz;
+        const oz = -Math.sin(yaw) * lx + Math.cos(yaw) * lz;
+        const expected = { x: vehicle.position.x + ox + dx * fraction, z: vehicle.position.z + oz + dz * fraction };
+        const corrected = { ...expected };
+        moveWithCollisions(corrected, 0, 0, 0.18, cells, this.renderer.solidMeshes);
+        if (Math.hypot(corrected.x - expected.x, corrected.z - expected.z) > 0.035) return false;
+      }
+      return true;
+    };
+    let low = 0, high = 1;
+    if (clearAt(1)) low = 1;
+    else {
+      for (let i = 0; i < 9; i++) {
+        const mid = (low + high) * 0.5;
+        if (clearAt(mid)) low = mid; else high = mid;
+      }
+    }
+    vehicle.position.x += dx * low;
+    vehicle.position.z += dz * low;
+    return low;
+  }
+
   updateVehicle(delta) {
     const vehicle = this.currentVehicle;
     if (!vehicle) { this.exitVehicle(); return; }
@@ -722,9 +756,8 @@ export class Game {
     const dx = Math.sin(this.vehicleYaw) * this.vehicleSpeed * delta * forwardSign;
     const dz = Math.cos(this.vehicleYaw) * this.vehicleSpeed * delta * forwardSign;
     const beforeX=vehicle.position.x,beforeZ=vehicle.position.z;
-    const radius=type==="truck"?1.35:type==="bike"?0.52:1.02;
-    moveWithCollisions(vehicle.position,dx,dz,radius,this.renderer.getGateCollisionCells(),this.renderer.solidMeshes);
-    if (Math.hypot(vehicle.position.x-beforeX,vehicle.position.z-beforeZ)<Math.hypot(dx,dz)*0.2) this.vehicleSpeed*=0.18;
+    const allowedFraction = this.moveVehicleWithFootprint(vehicle, dx, dz, type);
+    if (allowedFraction < 0.2 && Math.hypot(dx, dz) > 0.001) this.vehicleSpeed *= 0.18;
     const data=vehicle.userData||{};
     if (type==="bike") {
       for (const wheel of data.wheels||[]) wheel.spin.rotation.x += this.vehicleSpeed*delta/0.30;
