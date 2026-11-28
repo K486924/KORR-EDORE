@@ -400,3 +400,12 @@ body.in-vehicle #touch-pad, body.in-vehicle #sprint-button, body.in-vehicle #int
   #bike-levers button { min-width:0; padding:0 7px; font-size:8px; }
   #vehicle-joystick { width:104px; height:104px; left:10px; }
 }
+
+
+/* Bike levers occupy their own bottom row; drive/steering controls stay above them. */
+body.bike-controls-active #vehicle-button-controls { bottom: 72px; }
+body.bike-controls-active #vehicle-joystick { bottom: 72px; }
+@media(max-width:390px) {
+  body.bike-controls-active #vehicle-button-controls { bottom: 72px; }
+  body.bike-controls-active #vehicle-joystick { bottom: 72px; }
+}
