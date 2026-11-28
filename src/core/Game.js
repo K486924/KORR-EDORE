@@ -242,9 +242,14 @@ export class Game {
     const collisionInfo = { normalX: 0, normalZ: 0 };
     moveWithCollisions(camera.position, deltaX, deltaZ, PLAYER_CONFIG.radius,
       this.renderer.getGateCollisionCells(), this.renderer.solidMeshes, collisionInfo);
-    const actualMove = Math.hypot(camera.position.x - startX, camera.position.z - startZ);
+    const actualX = camera.position.x - startX;
+    const actualZ = camera.position.z - startZ;
+    const actualMove = Math.hypot(actualX, actualZ);
     const intendedMove = Math.hypot(deltaX, deltaZ);
-    if (moving && intendedMove > 0.0005 && actualMove < 0.006) {
+    const forwardProgress = intendedMove > 1e-6
+      ? (actualX * deltaX + actualZ * deltaZ) / intendedMove : 0;
+    // Sliding along a wall is not progress if the player is still pushing into it.
+    if (moving && intendedMove > 0.0005 && forwardProgress < 0.002) {
       this.stuckPushTimer += delta;
       if (Math.hypot(collisionInfo.normalX, collisionInfo.normalZ) > 0.25) {
         this.lastCollisionNormal.x = collisionInfo.normalX;
@@ -257,9 +262,21 @@ export class Game {
           const inputLength = Math.hypot(deltaX, deltaZ) || 1;
           nx = -deltaX / inputLength; nz = -deltaZ / inputLength;
         } else { nx /= normalLength; nz /= normalLength; }
-        const recovery = PLAYER_CONFIG.radius * 1.35;
+        const recovery = Math.max(0.42, PLAYER_CONFIG.radius * 1.6);
+        const beforeRecovery = { x: camera.position.x, z: camera.position.z };
         moveWithCollisions(camera.position, nx * recovery, nz * recovery,
           PLAYER_CONFIG.radius, this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
+        if (Math.hypot(camera.position.x - beforeRecovery.x, camera.position.z - beforeRecovery.z) < 0.08) {
+          for (const scale of [1, 1.5, 2]) {
+            const candidate = { x: beforeRecovery.x + nx * recovery * scale, z: beforeRecovery.z + nz * recovery * scale };
+            const corrected = { ...candidate };
+            moveWithCollisions(corrected, 0, 0, PLAYER_CONFIG.radius,
+              this.renderer.getGateCollisionCells(), this.renderer.solidMeshes);
+            if (Math.hypot(corrected.x - candidate.x, corrected.z - candidate.z) < 0.08) {
+              camera.position.x = candidate.x; camera.position.z = candidate.z; break;
+            }
+          }
+        }
         this.stuckPushTimer = 0;
         this.lastCollisionNormal.x = 0; this.lastCollisionNormal.z = 0;
         this.showGameToast("You were caught against something. You step back to clear it.");
@@ -590,6 +607,7 @@ export class Game {
     this.currentVehicleType = type;
     this.inVehicle = true;
     this.vehicleSpeed = 0; this.carSpeed = 0;
+    this.stuckPushTimer = 0;
     this.vehicleYaw = vehicle.rotation.y;
     this.vehicleGear = 1; this.vehicleLightsOn = false;
     this.vehicleButtons.clear();
@@ -606,6 +624,8 @@ export class Game {
       if (name) name.textContent = type === "truck" ? "CARGO TRUCK" : type === "bike" ? "REBEL" : "SEDAN";
     }
     if (controls) controls.hidden = false;
+    const exitButton = document.querySelector("#vehicle-exit");
+    if (exitButton) exitButton.hidden = false;
     const bikeControls = document.querySelector("#bike-levers");
     const carControls = document.querySelector("#car-pedals");
     if (bikeControls) bikeControls.hidden = type !== "bike";
@@ -637,7 +657,8 @@ export class Game {
     const forwardSign = v.userData?.forwardSign || -1;
     const sideDistance = this.currentVehicleType === "truck" ? 1.7 : this.currentVehicleType === "bike" ? 1.05 : 1.4;
     const offsets = [[sideDistance,0],[-sideDistance,0],[0,-forwardSign*1.8],[0,forwardSign*1.8],
-      [sideDistance,-forwardSign*1.2],[-sideDistance,-forwardSign*1.2]];
+      [sideDistance,-forwardSign*1.2],[-sideDistance,-forwardSign*1.2],
+      [sideDistance*1.55,0],[-sideDistance*1.55,0],[0,-forwardSign*2.5],[0,forwardSign*2.5]];
     let safePosition = null;
     for (const [lx,lz] of offsets) {
       const candidate = {
