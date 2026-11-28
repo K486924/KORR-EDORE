@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#080706">
   <title>KORR EDORE</title>
-  <link rel="stylesheet" href="./src/styles.css?v=11">
+  <link rel="stylesheet" href="./src/styles.css?v=12">
   <script type="importmap">
     {
       "imports": {
@@ -97,11 +97,27 @@
       <div class="status-track stamina-track"><i id="stamina-fill"></i></div>
     </section>
     <button id="sprint-button" type="button" aria-label="Hold to sprint" aria-pressed="false">SPRINT</button>
-    <section id="vehicle-hud" hidden><strong>SEDAN</strong><span id="vehicle-speed">0 km/h</span><span id="spare-count">SPARES · 1</span></section>
+    <section id="vehicle-hud" hidden>
+      <strong>SEDAN</strong>
+      <div class="vehicle-gear"><button id="gear-down" type="button" aria-label="Downshift">−</button><span id="vehicle-gear-value">1 / 6</span><button id="gear-up" type="button" aria-label="Upshift">+</button></div>
+      <span id="vehicle-speed">0 km/h</span><span id="spare-count">SPARES · 1</span>
+    </section>
+    <section id="vehicle-controls" hidden aria-label="Vehicle controls">
+      <button id="vehicle-mode-toggle" type="button">BUTTON CONTROLS</button>
+      <div id="vehicle-button-controls">
+        <div class="vehicle-steering"><button type="button" data-vehicle-input="steer-left">◀</button><button type="button" data-vehicle-input="steer-right">▶</button></div>
+        <div class="vehicle-drive"><button type="button" data-vehicle-input="reverse">REVERSE</button><button type="button" data-vehicle-input="throttle">THROTTLE</button></div>
+      </div>
+      <div id="vehicle-joystick" hidden aria-label="Vehicle joystick"><i id="vehicle-joystick-stick"></i></div>
+      <div id="car-pedals"><button type="button" data-vehicle-input="brake">BRAKE</button><button type="button" data-vehicle-input="handbrake">HANDBRAKE</button></div>
+      <div id="bike-levers" hidden><button type="button" data-vehicle-input="clutch">CLUTCH · LEFT</button><button type="button" data-vehicle-input="front-brake">FRONT BRAKE · RIGHT</button><button type="button" data-vehicle-input="pedal-brake">PEDAL BRAKE</button></div>
+      <button id="vehicle-lights" type="button">LIGHTS</button>
+      <button id="vehicle-exit" type="button">EXIT VEHICLE</button>
+    </section>
     <button id="interact-button" type="button" hidden>OPEN GATE · E</button>
     <button id="flashlight-toggle" type="button" aria-label="Toggle flashlight" aria-pressed="false">LIGHT OFF</button>
     <div id="look-hint">DRAG TO LOOK</div>
   </main>
-  <script type="module" src="./src/main.js?bootdiag=18"></script>
+  <script type="module" src="./src/main.js?bootdiag=19"></script>
 </body>
 </html>
