@@ -42,6 +42,13 @@ function resolveAxis(position, radius, axis, extraSolidCells = null, collisionIn
   }
 }
 
+function isEffectivelyVisible(object) {
+  for (let node = object; node; node = node.parent) {
+    if (node.visible === false) return false;
+  }
+  return true;
+}
+
 function resolveMeshCollisions(position, radius, meshes, collisionInfo = null) {
   if (!meshes?.length) return;
   const center = new THREE.Vector3();
@@ -53,7 +60,7 @@ function resolveMeshCollisions(position, radius, meshes, collisionInfo = null) {
   const inverse = new THREE.Quaternion();
   for (let pass = 0; pass < 3; pass++) {
     for (const mesh of meshes) {
-      if (!mesh?.visible || mesh.userData?.collisionEnabled === false) continue;
+      if (!mesh || !isEffectivelyVisible(mesh) || mesh.userData?.collisionEnabled === false) continue;
       mesh.updateWorldMatrix(true, false);
       mesh.matrixWorld.decompose(center, worldQuaternion, worldScale);
       const geometry = mesh.geometry;
