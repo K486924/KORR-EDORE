@@ -5,7 +5,7 @@ import { PLAYER_CONFIG } from "../config/physics.js";
 import { PlayerAvatar } from "../player/PlayerAvatar.js";
 import { createMaterialLibrary } from "../procedural/materials/MaterialLibrary.js";
 import { InteractionSystem } from "../interaction/InteractionSystem.js?v=8";
-import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=2";
+import { createLegacyFleet } from "../vehicles/LegacyVehicleModels.js?v=3";
 import { createFarmhouseInterior } from "./FarmhouseInterior.js?v=8";
 
 export class Renderer {
@@ -156,8 +156,9 @@ export class Renderer {
     const wallY = 1.98;
     const wallH = 3.45;
     // First-floor structural walls: visible meshes and collision shapes share the same transforms.
-    solidBox([6.65, wallH, 0.42], [-4.675, wallY, 1.5], plaster);
-    solidBox([6.65, wallH, 0.42], [4.675, wallY, 1.5], plaster);
+    // Separate facade wall colliders leave a 3.0 m clear entrance (well above 1.2x player width).
+    solidBox([6.4, wallH, 0.42], [-4.7, wallY, 1.5], plaster);
+    solidBox([6.4, wallH, 0.42], [4.7, wallY, 1.5], plaster);
     solidBox([0.42, wallH, 15.5], [-7.9, wallY, -6.25], plaster);
     solidBox([0.42, wallH, 15.5], [7.9, wallY, -6.25], plaster);
     solidBox([16.2, wallH, 0.42], [0, wallY, -14.0], plaster);
@@ -205,10 +206,10 @@ export class Renderer {
     // Proper double-leaf entrance: each leaf is hinged on its jamb, raycastable and collidable.
     for (const side of [-1, 1]) {
       const hinge = new THREE.Group();
-      hinge.position.set(side * 1.35, 0.32, 1.5);
+      hinge.position.set(side * 1.5, 0.32, 1.5);
       world.add(hinge);
       const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.65, 0.14), wood);
-      leaf.position.set(-side * 0.675, 1.325, 0);
+      leaf.position.set(-side * 0.75, 1.325, 0);
       leaf.castShadow = true; leaf.receiveShadow = true;
       hinge.add(leaf);
       const inset = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.75, 0.035), mat(0x76563b));
@@ -976,6 +977,8 @@ export class Renderer {
     const door = this.houseDoors?.find(item => item.id === id);
     if (!door) return false;
     door.open = !door.open;
+    // Open leaves stop colliding immediately; the animated pivot still provides the visible swing.
+    door.leaf.userData.collisionEnabled = !door.open;
     return door.open;
   }
 
